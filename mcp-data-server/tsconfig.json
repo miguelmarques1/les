@@ -1,0 +1,24 @@
+// packages/recommendation-service/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2022", // Ou "esnext" para recursos mais recentes
+    "module": "commonjs", // Mantenha como commonjs para compatibilidade
+    "moduleResolution": "node",
+    "outDir": "./dist", // Onde os arquivos .js compilados serão salvos
+    "rootDir": "./src", // Onde seus arquivos .ts estão
+    "esModuleInterop": true, // Importante para lidar com ES Modules
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true, // Se você usa decorators (NestJS, TypeORM)
+    "experimentalDecorators": true, // Se você usa decorators
+    "sourceMap": true // Para facilitar a depuração
+  },
+  "include": [
+    "src/**/*.ts" // Inclui todos os arquivos .ts dentro da pasta src
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts" // Exclui arquivos de teste
+  ]
+}

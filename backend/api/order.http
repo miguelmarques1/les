@@ -1,0 +1,31 @@
+### Criar pedido
+POST http://localhost:3000/api/order
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTEyNDU3MDd9.7MXU65uFJt_0Q2kGaHMti_UCA9EUKvAnr7AA9--fFI8
+Content-Type: application/json
+
+{
+    "address_id": 2,
+    "card_id": 2,
+    "coupon_code": "WELCOME10"
+}
+
+### Pegar os meus pedidos
+GET http://localhost:3000/api/order
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTEyNDU3MDd9.7MXU65uFJt_0Q2kGaHMti_UCA9EUKvAnr7AA9--fFI8
+Content-Type: application/json
+
+{}
+
+### Pegar todos os pedidos
+GET http://localhost:3000/api/order/all
+Content-Type: application/json
+
+{}
+
+### Atualizar status do pedido
+PUT http://localhost:3000/api/order/17
+Content-Type: application/json
+
+{
+    "status": "APPROVED"
+}

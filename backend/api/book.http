@@ -1,0 +1,39 @@
+### GET ALL BOOKS (with optional query)
+GET http://localhost:3000/api/book?query=
+Accept: application/json
+
+{}
+
+### GET SINGLE BOOK BY ID
+GET http://localhost:3000/api/book/1
+Accept: application/json
+
+{}
+### GET CUSTOMER INTEREST BOOKS
+GET http://localhost:3000/api/book/interest/1
+Accept: application/json
+
+{}
+
+### GET BOOKS BY CATEGORY
+GET http://localhost:3000/api/book/category/1
+Accept: application/json
+
+{}
+
+### GET BOOKS BY MULTIPLE IDs (POST with body)
+POST http://localhost:3000/api/book/ids
+Content-Type: application/json
+Accept: application/json
+
+{
+    "ids": [1, 2, 4]
+}
+
+### GET LOW STOCK COUNT (assuming this endpoint exists)
+GET http://localhost:3000/api/book/stock/low
+Accept: application/json
+
+### GET TOTAL BOOK COUNT (assuming this endpoint exists)
+GET http://localhost:3000/api/book/count
+Accept: application/json

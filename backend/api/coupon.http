@@ -1,0 +1,8 @@
+### VALIDAR CÓDIGO DE CUPOM
+POST http://localhost:3000/api/coupon/validate
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{
+    "code": "WELCOME10"
+}

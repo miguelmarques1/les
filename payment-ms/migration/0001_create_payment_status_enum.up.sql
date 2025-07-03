@@ -1,0 +1,1 @@
+CREATE TYPE payment_status AS ENUM ('APPROVED', 'DENIED');

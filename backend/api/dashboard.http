@@ -1,0 +1,14 @@
+### Pegar dados do dashboard
+GET http://localhost:3000/api/admin/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUxMzA5NTk5fQ.mUrmJ0bvjrTUftB5q9yfZfqA-6oZTYeXO8gWG1t3JjI
+
+{}
+
+### Autenticar Admin
+POST http://localhost:3000/api/admin/auth
+Content-Type: application/json
+
+{
+  "email": "admin@livrariaxyz.com",
+  "password": "admin123"
+}

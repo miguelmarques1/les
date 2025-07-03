@@ -1,0 +1,53 @@
+### CRIAR ADDRESS
+POST http://localhost:3000/api/address
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjg2Mzh9.yo9O7zI0U4NJtq-iLsABIBmdiCMZL9XIdhmrNWrSZMM
+
+{
+  "alias": "Billing Address",
+  "type": "BILLING",
+  "residence_type": "HOUSE",
+  "street_type": "RESIDENTIAL",
+  "street": "Alameda Celestino Rodrigues",
+  "number": 478,
+  "district": "Jardim Imperador",
+  "zip_code": "08673230",
+  "city": "Suzano",
+  "state": "São Paulo",
+  "country": "Brasil",
+  "observations": "Near the main avenue"
+}
+
+### PEGAR DADOS DE ADDRESS
+GET http://localhost:3000/api/address
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjg2Mzh9.yo9O7zI0U4NJtq-iLsABIBmdiCMZL9XIdhmrNWrSZMM
+
+{}
+
+### ATUALIZAR ADDRESS POR ID
+PUT http://localhost:3000/api/address/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjg2Mzh9.yo9O7zI0U4NJtq-iLsABIBmdiCMZL9XIdhmrNWrSZMM
+
+{
+  "alias": "Delivery Address Updated",
+  "type": "SHIPPING",
+  "residence_type": "APARTMENT",
+  "street_type": "RESIDENTIAL",
+  "street": "Alameda Celestino Rodrigues 2",
+  "number": 478,
+  "district": "Jardim Imperador",
+  "zip_code": "08673230",
+  "city": "Suzano",
+  "state": "São Paulo",
+  "country": "Brasil",
+  "observations": "Building with three entrances"
+}
+
+### DELETAR ADDRESS POR ID
+DELETE http://localhost:3000/api/address/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjg2Mzh9.yo9O7zI0U4NJtq-iLsABIBmdiCMZL9XIdhmrNWrSZMM
+
+{}

@@ -1,0 +1,44 @@
+import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+
+export async function POST(request: Request) {
+  try {
+    const cookieStore = cookies()
+    const token = (await cookieStore).get("auth_token")?.value
+
+    if (!token) {
+      return NextResponse.json({ error: true, message: "Não autorizado" }, { status: 401 })
+    }
+
+    const body = await request.json()
+
+    // Validar os dados da requisição
+    if (!body.description || !body.order_item_ids || !body.type) {
+      return NextResponse.json({ error: true, message: "Dados incompletos para criar a solicitação" }, { status: 400 })
+    }
+
+    // Fazer a requisição real para a API externa
+    const response = await fetch(`${process.env.API_URL}/return-exchange-requests`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return NextResponse.json(
+        { error: true, message: errorData.message || "Erro ao criar solicitação" },
+        { status: response.status },
+      )
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("Erro ao processar solicitação:", error)
+    return NextResponse.json({ error: true, message: "Erro interno do servidor" }, { status: 500 })
+  }
+}

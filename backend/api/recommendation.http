@@ -1,0 +1,9 @@
+### PEGAR RECOMENDAÇÕES DE LIVROS
+POST http://localhost:3000/api/recommendations/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTEzMDAzNzZ9.dxMNeA-3l_QcwwfqY1hRALgE-_obfIOsSjYGJivg_yI
+
+{
+    "message": "Olá, tudo bem, poderia me recomendar livros?",
+    "history": []
+}

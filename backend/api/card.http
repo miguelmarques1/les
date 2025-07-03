@@ -1,0 +1,26 @@
+### CRIAR CARD
+POST http://localhost:3000/api/card
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{
+  "number": "4111121111111211",
+  "holder_name": "Miguel Marques",
+  "brand_id": 34,
+  "expiry_date": "10/31",
+  "cvv": "123"
+}
+
+### PEGAR DADOS DE CARD POR ID
+GET http://localhost:3000/api/card
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{}
+
+### DELETAR CARD POR ID
+DELETE http://localhost:3000/api/card/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{}

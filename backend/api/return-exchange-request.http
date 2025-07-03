@@ -1,0 +1,25 @@
+### CREATE RETURN/EXCHANGE REQUEST
+POST http://localhost:3000/api/return-exchange-requests 
+Content-Type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiaWF0IjoxNzQ0MDQ5ODg2LCJleHAiOjE3NDQ2NTQ2ODZ9.JeAXuCI2ON6UN1bfrdUTR8KKlzRsjsYZrwT99XCalsA
+
+{ "description": "Received wrong book color", "order_item_ids": [45, 46], "type": "exchange" | "return" }
+
+### GET MY RETURN/EXCHANGE REQUESTS
+GET http://localhost:3000/api/return-exchange-requests/my-requests 
+Content-Type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTEzMTQ3Mjl9.P5SoZhmousxwboW4JPkMugGHGt0zmrEPBNa5XHmKCyo
+
+### UPDATE REQUEST STATUS (ADMIN)
+PUT http://localhost:3000/api/return-exchange-requests/8/status 
+Content-Type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiaWF0IjoxNzQ0MDQ5ODg2LCJleHAiOjE3NDQ2NTQ2ODZ9.JeAXuCI2ON6UN1bfrdUTR8KKlzRsjsYZrwT99XCalsA
+
+{ "status": "EXCHANGE_ACCEPTED" }
+
+### GET ALL RETURN/EXCHANGE REQUESTS (ADMIN)
+GET http://localhost:3000/api/return-exchange-requests 
+Content-Type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTEzMTQ3Mjl9.P5SoZhmousxwboW4JPkMugGHGt0zmrEPBNa5XHmKCyo
+ 
+{}

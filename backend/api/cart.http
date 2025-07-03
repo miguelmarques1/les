@@ -1,0 +1,27 @@
+### Adicionar item ao carrinho
+POST http://localhost:3000/api/cart/add
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{
+  "book_id": 23,
+  "quantity": 2
+}
+
+### Remover items do carrinho
+DELETE http://localhost:3000/api/cart
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{
+  "items": [
+    40
+  ]
+}
+
+### Pegar dados do carrinho
+GET http://localhost:3000/api/cart
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{}

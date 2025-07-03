@@ -1,0 +1,11 @@
+- name: Clear npm cache
+  run: npm cache clean --force
+
+# Adicione isso antes da etapa que instala as dependências
+- name: Cache node modules
+  uses: actions/cache@v2
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-modules-

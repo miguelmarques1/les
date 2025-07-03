@@ -1,0 +1,8 @@
+POST http://localhost:3004/recommendations/
+Content-Type: application/json
+
+{
+    "history": [],
+    "message": "Olá, tudo bem? Me recomende algum livro histórico.",
+    "customerID": 1
+}

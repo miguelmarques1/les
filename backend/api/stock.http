@@ -1,0 +1,22 @@
+### PEGAR DADOS DE LIVROS
+GET http://localhost:3000/api/stock?query=
+Content-Type: application/json
+
+{}
+
+### PEGAR DADOS DE UM LIVRO
+GET http://localhost:3000/api/stock/13
+Content-Type: application/json
+
+{}
+
+### INSERIR LIVROS EM ESTOQUE
+POST http://localhost:3000/api/stock
+Content-Type: application/json
+
+{
+    "book_id": 1,
+    "supplier": "Fornecedora Alpha",
+    "quantity": 60,
+    "costs_value": 149.90
+}

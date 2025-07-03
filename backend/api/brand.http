@@ -1,0 +1,6 @@
+### PEGAR DADOS DE BANDEIRAS
+GET http://localhost:3000/api/brand
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTA4OTM0NzZ9.XWB3zL7yEBQmkCQQPcuVp9Ecfz9R-gNyAxoFA0a6rfQ
+
+{}

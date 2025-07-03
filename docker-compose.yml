@@ -1,0 +1,213 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: linkm
+      RABBITMQ_DEFAULT_PASS: linkm
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  backend-db:
+    image: postgres:16
+    container_name: backend-db
+    restart: always
+    environment:
+      POSTGRES_DB: les
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: 5cZ7SJq2e88y
+    ports:
+      - "5433:5432"
+    volumes:
+      - backend-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U backend -d les" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: .docker/Dockerfile
+    container_name: backend
+    mem_limit: 1g
+    mem_reservation: 512m
+    environment:
+      - RECOMMENDATION_MS_URL=http://recommendation-ms:3003
+      - DB_HOST=backend-db
+      - DB_PORT=5432
+      - DB_USER=backend
+      - DB_PASSWORD=5cZ7SJq2e88y
+      - DB_DATABASE=les
+      - RABBITMQ_URL=amqp://linkm:linkm@rabbitmq
+      - ADMIN_EMAIL=admin@livrariaxyz.com
+      - ADMIN_PASSWORD=admin123
+      - DATABASE_URL=postgres://backend:5cZ7SJq2e88y@backend-db:5432/les
+      - GEMINI_MODEL=gemini-2.0-flash
+      - PORT=3000
+    secrets:
+      - gemini_api_key
+      - jwt_secret
+    ports:
+      - "3000:3000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      backend-db:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "lsof -i :3000 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  payment-db:
+    image: postgres:16
+    container_name: payment-db
+    restart: always
+    environment:
+      POSTGRES_DB: paymentlogs
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: hmH7b6RFO77Y
+    ports:
+      - "5544:5432"
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U payment -d paymentlogs" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    networks:
+      - app-network
+
+  payment-ms:
+    build:
+      context: ./payment-ms
+      dockerfile: .docker/Dockerfile
+    container_name: payment-ms
+    ports:
+      - "3003:3003"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payment-db:
+        condition: service_healthy
+    secrets:
+      - jwt_secret
+    environment:
+      - RABBITMQ_URL=amqp://linkm:linkm@rabbitmq
+      - BACKEND_URL=http://backend:3000/api
+      - DB_HOST=payment-db
+      - DB_PORT=5432
+      - DB_USER=payment
+      - DB_PASSWORD=hmH7b6RFO77Y
+      - DB_NAME=paymentlogs
+      - MIGRATE_PATH=./migration
+    networks:
+      - app-network
+
+  recommendation-ms:
+    build:
+      context: ./recommendation-ms
+      dockerfile: .docker/Dockerfile
+    container_name: recommendation-ms
+    mem_limit: 512m
+    mem_reservation: 256m
+    ports:
+      - "3004:3003"
+    environment:
+      - BACKEND_URL=http://backend:3000/api
+      - GEMINI_MODEL=gemini-2.0-flash
+      - MCP_SERVER_SCRIPT_PATH=/mcp-data-server-build/index.js
+    secrets:
+      - gemini_api_key
+    volumes:
+      - mcp-data-server-build:/mcp-data-server-build
+    depends_on:
+      mcp-data-server:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  mcp-data-server:
+    build:
+      context: ./mcp-data-server
+      dockerfile: .docker/Dockerfile
+    container_name: mcp-data-server
+    mem_limit: 256m
+    mem_reservation: 128m
+    environment:
+      - BACKEND_URL=http://backend:3000/api
+    volumes:
+      - mcp-data-server-build:/app/dist
+    networks:
+      - app-network
+
+  ecommerce:
+    build:
+      context: ./ecommerce
+      dockerfile: .docker/Dockerfile
+    container_name: ecommerce
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3000/api
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  backoffice:
+    build:
+      context: ./backoffice
+      dockerfile: .docker/Dockerfile
+    container_name: backoffice
+    ports:
+      - "3002:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3000/api
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+secrets:
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  gemini_api_key:
+    file: ./secrets/gemini_api_key.txt
+
+volumes:
+  payment-db-data:
+  backend-db-data:
+  mcp-data-server-build:
+
+
+networks:
+  app-network:
+    driver: bridge

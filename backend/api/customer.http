@@ -1,0 +1,108 @@
+### LOGIN
+POST http://localhost:3000/api/auth/login 
+Content-Type: application/json
+
+{
+    "email": "example@user.com",
+    "password": "Senhasecreta1!"
+}
+
+### PEGAR DADOS DE CUSTOMER
+GET http://localhost:3000/api/customers
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{}
+
+### CRIAR CUSTOMER
+POST http://localhost:3000/api/customers
+Content-Type: application/json
+
+{
+  "name": "Example Name",
+  "email": "example2@user.com",
+  "password": "Senhafraca1!",
+  "gender": "male",
+  "birthdate": "08/09/2003",
+  "document": "819.251.230-49",
+  "phone": {
+    "type": "mobile",
+    "ddd": "11",
+    "number": "991485038"
+  },
+  "billing_address": {
+    "alias": "Billing Address",
+    "type": "BILLING",
+    "residence_type": "HOUSE",
+    "street_type": "RESIDENTIAL",
+    "street": "Alameda Celestino Rodrigues",
+    "number": 478,
+    "district": "Jardim Imperador",
+    "zip_code": "08673230",
+    "city": "Suzano",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "observations": "Near the main avenue"
+  },
+  "delivery_address": {
+    "alias": "Delivery Address",
+    "type": "SHIPPING",
+    "residence_type": "APARTMENT",
+    "street_type": "RESIDENTIAL",
+    "street": "Alameda Celestino Rodrigues",
+    "number": 478,
+    "district": "Jardim Imperador",
+    "zip_code": "08673230",
+    "city": "Suzano",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "observations": "Building with two entrances"
+  }
+}
+
+### ATUALIZAR CUSTOMER
+PUT http://localhost:3000/api/customers
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+
+{
+  "name": "Miguel Marques",
+  "email": "example@user.com",
+  "password": "Senhasecreta1!",
+  "gender": "male",
+  "birthdate": "08/09/2003",
+  "document": "483.693.088-05",
+  "phone": {
+    "type": "mobile",
+    "ddd": "11",
+    "number": "991485038"
+  },
+  "billing_address": {
+    "alias": "Billing Address",
+    "type": "BILLING",
+    "residence_type": "HOUSE",
+    "street_type": "RESIDENTIAL",
+    "street": "Alameda Celestino Rodrigues",
+    "number": 478,
+    "district": "Jardim Imperador",
+    "zip_code": "08673230",
+    "city": "Suzano",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "observations": "Near the main avenue"
+  },
+  "shipping_address": {
+    "alias": "Delivery Address",
+    "type": "SHIPPING",
+    "residence_type": "APARTMENT",
+    "street_type": "RESIDENTIAL",
+    "street": "Alameda Celestino Rodrigues",
+    "number": 478,
+    "district": "Jardim Imperador",
+    "zip_code": "08673230",
+    "city": "Suzano",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "observations": "Building with two entrances"
+  }
+}
