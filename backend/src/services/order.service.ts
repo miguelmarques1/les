@@ -18,7 +18,8 @@ import { Cart } from "../domain/entity/Cart"
 import { OrderRepository } from "../repositories/OrderRepository"
 import { StockBookStatus } from "../domain/enums/StockBookStatus"
 import { Brand } from "../domain/entity/Brand"
-import { PaymentService, PaymentServiceInterface } from "./payment.service"
+import { MessagePublisherServiceInterface, RabbitMQPublisherService } from "./message-publisher.service"
+import { TransactionMessage } from "../dto/rabbitmq.dto"
 
 export interface OrderServiceInterface {
   store(input: CreateOrderInputDTO): Promise<OrderOutputDTO>
@@ -44,7 +45,7 @@ export class OrderService implements OrderServiceInterface {
   private customerRepository: Repository<Customer>
   private cartService: CartService
   private brandRepository: Repository<Brand>
-  private paymentService: PaymentServiceInterface
+  private messageService: MessagePublisherServiceInterface
 
   public constructor(repositoryFactory: RepositoryFactory) {
     this.orderRepository = repositoryFactory.getOrderRepository()
@@ -57,7 +58,7 @@ export class OrderService implements OrderServiceInterface {
     this.customerRepository = repositoryFactory.getCustomerRepository()
     this.cartService = new CartService(repositoryFactory)
     this.brandRepository = repositoryFactory.getBrandRepository()
-    this.paymentService = new PaymentService(repositoryFactory)
+    this.messageService = new RabbitMQPublisherService()
   }
 
   async monthlySales(): Promise<MonthlySalesOutputDTO[]> {
@@ -196,7 +197,6 @@ export class OrderService implements OrderServiceInterface {
       await this.cartService.clear(input.customer_id);
 
       this.dbTransaction.commit();
-      this.paymentService.handle(order.id);
       return this.show(order.id);
     } catch (e) {
       this.dbTransaction.rollback();
@@ -325,6 +325,25 @@ export class OrderService implements OrderServiceInterface {
       new Date()
     );
 
-    return await this.transactionRepository.save(transaction);
+    const response = await this.transactionRepository.save(transaction);
+  
+    await this.makePayment(transaction);
+
+    return response;
+  }
+
+  private async makePayment(transaction: Transaction) {
+    const message: TransactionMessage = {
+      amount: transaction.amount,
+      card: {
+        cvv: transaction.cardCVV,
+        expiryDate: transaction.cardExpiryDate,
+        holderName: transaction.cardHolderName,
+        number: transaction.cardNumber,
+      },
+      id: transaction.id,
+    }
+
+    await this.messageService.publish(message);
   }
 }
