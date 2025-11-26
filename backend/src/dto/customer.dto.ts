@@ -33,3 +33,8 @@ export type UpdateCustomerInputDTO = {
     birthdate: string;
     gender: string;
 }
+
+export type DeleteCustomerInputDTO = {
+    password: string;
+    customerId: number,
+}

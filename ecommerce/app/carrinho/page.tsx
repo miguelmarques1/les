@@ -18,7 +18,7 @@ import BookCard from "@/components/book-card"
 import { addToCart } from "@/lib/actions/cart-actions"
 
 export default function CartPage() {
-  const { cart, groupedItems, isLoading: isCartLoading, error: cartError, removeBookQuantity, refreshCart } = useCart()
+  const { cart, groupedItems, isLoading: isCartLoading, error: cartError, removeFromCart, refreshCart } = useCart()
   const { books } = useBooks()
   const { coupon, isLoading: isCouponLoading, error: couponError, validateCoupon, clearCoupon } = useCoupon()
   const { toast } = useToast()
@@ -38,54 +38,54 @@ export default function CartPage() {
   // Coupon discount
   const couponDiscount = coupon ? coupon.calculateDiscountAmount(subtotal) : 0
 
-  // Total
   const total = subtotal + shippingCost - couponDiscount
 
-  // Update quantity (in a real app, this would call the API)
   const updateQuantity = async (bookId: number, currentQuantity: number, newQuantity: number) => {
-    if (newQuantity < 1) return
+    if (newQuantity < 1) return;
 
-    // Se a nova quantidade é menor que a atual, remover a diferença
-    if (newQuantity < currentQuantity) {
-      const quantityToRemove = currentQuantity - newQuantity
-      try {
-        await removeBookQuantity(bookId, quantityToRemove)
-        toast({
-          title: "Quantidade atualizada",
-          description: `A quantidade foi atualizada para ${newQuantity}.`,
-        })
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar a quantidade.",
-          variant: "destructive",
-        })
+    try {
+      const book = groupedItems.find((book) => book.bookId === bookId);
+
+      if (!book) {
+        throw new Error("Livro não encontrado no carrinho");
       }
-    }
-    // Se a nova quantidade é maior, adicionar a diferença
-    else if (newQuantity > currentQuantity) {
-      try {
-        // Adicionar a diferença ao carrinho
-        const quantityToAdd = newQuantity - currentQuantity
-        await addToCart(bookId, quantityToAdd)
-        toast({
-          title: "Quantidade atualizada",
-          description: `A quantidade foi atualizada para ${newQuantity}.`,
-        })
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar a quantidade.",
-          variant: "destructive",
-        })
+
+      if (newQuantity < currentQuantity) {
+        const quantityToRemove = currentQuantity - newQuantity;
+        const cartItemIds = book.stockItems
+          .slice(-quantityToRemove)
+          .map(item => item.cartItemId ?? 0);
+
+        await removeFromCart(cartItemIds);
       }
+      else if (newQuantity > currentQuantity) {
+        const quantityToAdd = newQuantity - currentQuantity;
+        await addToCart(bookId, quantityToAdd);
+      }
+
+      toast({
+        title: "Quantidade atualizada",
+        description: `A quantidade foi atualizada para ${newQuantity}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a quantidade.",
+        variant: "destructive",
+      });
     }
   }
 
-  // Remove all items of a book from cart
   const removeBook = async (bookId: number, quantity: number) => {
     try {
-      await removeBookQuantity(bookId, quantity)
+      const book = groupedItems.find((book) => book.bookId === bookId);
+
+      if (!book) {
+        throw new Error("Livro não encontrado no carrinho");
+      }
+      const cartItemIds = book.stockItems.slice(0, quantity).map(item => item.cartItemId ?? 0);
+
+      await removeFromCart(cartItemIds);
       toast({
         title: "Item removido",
         description: "O item foi removido do carrinho.",
@@ -99,7 +99,6 @@ export default function CartPage() {
     }
   }
 
-  // Apply coupon
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
       toast({

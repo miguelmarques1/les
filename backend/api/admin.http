@@ -1,0 +1,76 @@
+### Admin Authentication
+POST http://localhost:3000/api/admin/auth
+Content-Type: application/json
+
+{
+  "email": "admin@admin.com",
+  "password": "admin123"
+}
+
+### Create Coupon
+POST http://localhost:3000/api/admin/coupons
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+{
+  "code": "SUMMER2024",
+  "discount": 50,
+  "type": "PERCENTAGE",
+  "status": "AVAILABLE",
+  "expiryDate": "2024-12-31"
+}
+
+### Toggle Coupon Status
+PATCH http://localhost:3000/api/admin/coupons/1/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+{
+  "status": "DISABLED"
+}
+
+### Create Brand
+POST http://localhost:3000/api/admin/brands
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+{
+  "name": "Samsung"
+}
+
+### List Brands
+GET http://localhost:3000/api/admin/brands
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### Delete Brand
+DELETE http://localhost:3000/api/admin/brands/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### List Orders
+GET http://localhost:3000/api/admin/orders
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### Get Order Details
+GET http://localhost:3000/api/admin/orders/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### List Users
+GET http://localhost:3000/api/admin/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### List Returns/Exchanges
+GET http://localhost:3000/api/admin/returns
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+### Update Return Status
+PATCH http://localhost:3000/api/admin/returns/1/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U
+
+{
+  "status": "RETURN_COMPLETED"
+}
+
+### Dashboard with Custom Period
+GET http://localhost:3000/api/admin/dashboard?startDate=2024-01-01&endDate=2024-03-31
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM0MzAwMDd9.BjasQ1VIc7Qo_g4M1HTCFjtd5hnoIs4jtc8wJTttq-U

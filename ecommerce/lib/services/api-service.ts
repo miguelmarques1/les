@@ -75,6 +75,13 @@ export class ApiService {
     return CustomerModel.fromMap(data)
   }
 
+  async deleteCustomerProfile(password: string): Promise<boolean> {
+    const data = await this.request<boolean>("/customers", "DELETE", {
+      password: password,
+    });
+    return data;
+  }
+
   // Books
   async getAllBooks(): Promise<BookModel[]> {
     const data = await this.request<any[]>("/stock")

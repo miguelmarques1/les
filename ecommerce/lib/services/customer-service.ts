@@ -27,4 +27,12 @@ export class CustomerService {
 
     return await this.apiService.updateCustomerProfile(updateData)
   }
+
+  async deleteProfile(password: string) {
+    if(!password) {
+      throw new Error("A senha deve ser enviada");
+    }
+
+    return await this.apiService.deleteCustomerProfile(password);
+  }
 }

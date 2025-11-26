@@ -11,11 +11,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlI
 ### Remover items do carrinho
 DELETE http://localhost:3000/api/cart
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTExNjk5OTd9.-jKQdMdzsk5pRMPf-xhNrlkVdizv_1chxgSWT_M6i64
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQiLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NTE1ODkzMzR9.VxWknFpuIPtVxfVjdOa1EOrw2zH0PkGr1GFDt4mBXr0
 
 {
   "items": [
-    40
+    7
   ]
 }
 

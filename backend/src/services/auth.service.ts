@@ -21,9 +21,6 @@ export class AuthService implements AuthServiceInterface {
       where: {
         email: input.email,
       },
-      relations: {
-        password: true,
-      },
     })
     if (!customer) {
       throw new UnauthorizedException("Usuário não existe")

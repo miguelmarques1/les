@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { Address } from "../domain/entity/Address";
 import { Card } from "../domain/entity/Card";
 import { Customer } from "../domain/entity/Customer";
+import { Admin } from "../domain/entity/Admin";
 import { Phone } from "../domain/entity/Phone";
 import { Brand } from "../domain/entity/Brand";
 import { Category } from "../domain/entity/Category";
@@ -106,5 +107,9 @@ export class RepositoryFactory {
 
   getCustomerRepository(): Repository<Customer> {
     return this.dataSource.getRepository(Customer);
+  }
+
+  getAdminRepository(): Repository<Admin> {
+    return this.dataSource.getRepository(Admin);
   }
 }

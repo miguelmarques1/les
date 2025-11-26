@@ -1,120 +1,23 @@
+import type { ApiResponse } from "@/types/api-response"
 import { AddressModel, type AddressRequest } from "../models/address-model"
 import { AuthModel, type LoginRequest } from "../models/auth-model"
 import { BookModel } from "../models/book-model"
 import { BrandModel } from "../models/brand-model"
 import { CardModel, type CardRequest } from "../models/card-model"
 import { type CartAddRequest, CartModel } from "../models/cart-model"
-import { CouponModel, type CouponValidateRequest } from "../models/coupon-model"
+import { CouponCreateRequest, CouponModel, type CouponValidateRequest } from "../models/coupon-model"
 import { CustomerModel, type CustomerRequest, type CustomerUpdateRequest } from "../models/customer-model"
+import { DashboardModel, type DashboardData } from "../models/dashboard-model"
 import { OrderModel, type OrderRequest } from "../models/order-model"
-import type { ReturnExchangeModel } from "../models/return-exchange-model"
+import type { ReturnExchangeModel, UpdateReturnExchangeStatusRequest } from "../models/return-exchange-model"
 
-// Admin-specific interfaces
 export interface AdminAuthRequest {
   email: string
   password: string
 }
 
-export interface AdminAuthResponse {
-  data: {
-    access_token: string
-  }
-  error: boolean
-  message: string | null
-}
-
-export interface DashboardSummary {
-  totalSales: number
-  formattedTotalSales: string
-  totalOrders: number
-  averageOrderValue: number
-  formattedAverageOrderValue: string
-  inventoryCount: number
-  lowStockItems: number
-}
-
-export interface SalesData {
-  month: string
-  monthNumber: number
-  totalSales: number
-  totalOrders: number
-  averageOrderValue: number
-  year: number
-}
-
-export interface RecentOrder {
-  id: number
-  address: {
-    id: number
-    alias: string
-    type: string
-    residence_type: string
-    street_type: string
-    street: string
-    number: string
-    district: string
-    zip_code: string
-    city: string
-    state: string
-    country: string
-    customerId: number
-    observations: string
-  }
-  status: string
-  items: Array<{
-    status: string
-    code: string
-    supplier: string
-    costs_value: number
-    book_details: any
-    entry_date: string
-    id: number
-    sale_date: string
-    unit_price: number
-    order_item_id: number
-  }>
-  transaction: {
-    id: number
-    amount: number
-    card: {
-      id: number
-      number: string
-      holder_name: string
-      expiry_date: string
-      brand_id: number
-      customer_id: number
-    }
-    date: string
-    coupon: {
-      id: number
-      code: string
-      discount: number
-      type: string
-      status: string
-      expiryDate: string
-    }
-  }
-}
-
-export interface CategoryOverview {
-  categoryId: number
-  categoryName: string
-  percentage: number
-  totalItems: number
-  colorCode: string
-}
-
-export interface DashboardData {
-  summary: DashboardSummary
-  salesData: SalesData[]
-  recentOrders: RecentOrder[]
-  categoryOverview: CategoryOverview[]
-}
-
-export interface DashboardResponse {
-  data: DashboardData
-  error: boolean
-  message: string | null
+export interface AdminAuthData {
+  access_token: string
 }
 
 export class ApiService {
@@ -127,6 +30,10 @@ export class ApiService {
 
   setAccessToken(token: string | null) {
     this.accessToken = token
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken
   }
 
   private async request<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
@@ -143,42 +50,135 @@ export class ApiService {
       headers,
     }
 
-    if (body) {
+    if (body && method !== "GET") {
       options.body = JSON.stringify(body)
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, options)
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, options)
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `API request failed with status ${response.status}`)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          error: true,
+          message: `Request failed with status ${response.status}`,
+        }))
+        throw new Error(errorData.message || `API request failed with status ${response.status}`)
+      }
+
+      const responseData: ApiResponse<T> = await response.json()
+
+      if (responseData.error) {
+        throw new Error(responseData.message || "API returned an error")
+      }
+
+      return responseData.data
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error("An unexpected error occurred")
     }
-
-    const responseData = await response.json()
-    return responseData.data || responseData
   }
+
+  // ==================== ADMIN ENDPOINTS ====================
 
   // Admin Authentication
   async authenticateAdmin(email: string, password: string): Promise<string> {
     const request: AdminAuthRequest = { email, password }
-    const response = await this.request<{ access_token: string }>("/admin/auth", "POST", request)
-
-    const token = response.access_token
+    const data = await this.request<AdminAuthData>("/admin/auth", "POST", request)
+    const token = data.access_token
     this.setAccessToken(token)
     return token
   }
 
-  // Dashboard Data
-  async getDashboardData(): Promise<DashboardData> {
+  // Admin Dashboard
+  async getDashboardData(startDate?: string, endDate?: string): Promise<DashboardModel> {
     if (!this.accessToken) {
-      throw new Error("No access token available")
+      throw new Error("Authentication required")
     }
 
-    const response = await this.request<DashboardData>("/admin/dashboard")
-    return response
+    let endpoint = "/admin/dashboard"
+    const params = new URLSearchParams()
+
+    if (startDate) params.append("startDate", startDate)
+    if (endDate) params.append("endDate", endDate)
+
+    if (params.toString()) {
+      endpoint += `?${params.toString()}`
+    }
+
+    const data = await this.request<DashboardData>(endpoint)
+    return DashboardModel.fromMap(data)
   }
 
-  // Legacy Authentication (keeping for compatibility)
+  // Admin Users
+  async getAllUsers(): Promise<CustomerModel[]> {
+    const data = await this.request<any[]>("/admin/users")
+    return data.map((item) => CustomerModel.fromMap(item))
+  }
+
+  // Admin Orders
+  async getAllOrders(): Promise<OrderModel[]> {
+    const data = await this.request<any[]>("/admin/orders")
+    return data.map((item) => OrderModel.fromMap(item))
+  }
+
+  async getOrderById(id: number): Promise<OrderModel> {
+    const data = await this.request<any>(`/admin/orders/${id}`)
+    return OrderModel.fromMap(data)
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<OrderModel> {
+    const data = await this.request<any>(`/admin/orders/${id}/status`, "PATCH", { status })
+    return OrderModel.fromMap(data)
+  }
+
+  // Admin Brands
+  async getAllBrands(): Promise<BrandModel[]> {
+    const data = await this.request<any[]>("/admin/brands")
+    return data.map((item) => BrandModel.fromMap(item))
+  }
+
+  async createBrand(name: string): Promise<BrandModel> {
+    const data = await this.request<any>("/admin/brands", "POST", { name })
+    return BrandModel.fromMap(data)
+  }
+
+  async deleteBrand(id: number): Promise<void> {
+    await this.request<void>(`/admin/brands/${id}`, "DELETE")
+  }
+
+  // Admin Coupons
+  async getAllCoupons(): Promise<CouponModel[]> {
+    const data = await this.request<any[]>("/admin/coupons")
+    return data.map((item) => CouponModel.fromMap(item))
+  }
+
+  async createCoupon(couponData: CouponCreateRequest): Promise<CouponModel> {
+    const data = await this.request<any>("/admin/coupons", "POST", couponData)
+    return CouponModel.fromMap(data)
+  }
+
+  async updateCouponStatus(id: number, status: string): Promise<CouponModel> {
+    const data = await this.request<any>(`/admin/coupons/${id}/status`, "PATCH", { status })
+    return CouponModel.fromMap(data)
+  }
+
+  // Admin Returns/Exchanges
+  async getAllReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
+    const data = await this.request<any[]>("/admin/returns")
+    return data
+  }
+
+  async updateReturnExchangeStatus(requestId: number, status: string): Promise<ReturnExchangeModel> {
+    const request: UpdateReturnExchangeStatusRequest = { status }
+    const data = await this.request<any>(`/admin/returns/${requestId}/status`, "PATCH", request)
+    return data
+  }
+
+  // ==================== CUSTOMER ENDPOINTS ====================
+
+  // Authentication
   async login(credentials: LoginRequest): Promise<AuthModel> {
     const data = await this.request<any>("/auth/login", "POST", credentials)
     const authModel = AuthModel.fromMap(data)
@@ -186,7 +186,7 @@ export class ApiService {
     return authModel
   }
 
-  // Customer
+  // Customer Profile
   async registerCustomer(customer: CustomerRequest): Promise<CustomerModel> {
     const data = await this.request<any>("/customers", "POST", customer)
     return CustomerModel.fromMap(data)
@@ -256,20 +256,6 @@ export class ApiService {
     return data.map((item: any) => OrderModel.fromMap(item))
   }
 
-  async getAllOrders(): Promise<any[]> {
-    const data = await this.request<any[]>("/order/all")
-    return data
-  }
-
-  async getOrderById(id: number): Promise<OrderModel> {
-    const data = await this.request<any>(`/order/${id}`)
-    return OrderModel.fromMap(data)
-  }
-
-  async updateOrderStatus(id: number, status: string): Promise<any> {
-    return await this.request<any>(`/order/${id}`, "PUT", { status })
-  }
-
   // Addresses
   async getAddresses(): Promise<AddressModel[]> {
     const data = await this.request<any[]>("/address")
@@ -305,38 +291,29 @@ export class ApiService {
     await this.request<any>(`/card/${id}`, "DELETE")
   }
 
-  // Brands
+  // Brands (Customer)
   async getBrands(): Promise<BrandModel[]> {
     const data = await this.request<any[]>("/brand")
     return data.map((item) => BrandModel.fromMap(item))
   }
 
-  // Coupons
+  // Coupons (Customer)
   async validateCoupon(request: CouponValidateRequest): Promise<CouponModel> {
     const data = await this.request<any>("/coupon/validate", "POST", request)
     return CouponModel.fromMap(data)
   }
 
-  // Return/Exchange methods
+  // Return/Exchange Requests (Customer)
   async getMyReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
     const data = await this.request<any[]>("/return-exchange-requests/my-requests")
     return data
   }
 
-  async getAllReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
-    const data = await this.request<any[]>("/return-exchange-requests")
-    return data
-  }
-
-  async createReturnExchangeRequest(data: {
+  async createReturnExchangeRequest(requestData: {
     description: string
     order_item_ids: number[]
     type: "exchange" | "return"
   }): Promise<any> {
-    return await this.request<any>("/return-exchange-requests", "POST", data)
-  }
-
-  async updateReturnExchangeStatus(requestId: number, status: string): Promise<any> {
-    return await this.request<any>(`/return-exchange-requests/${requestId}/status`, "PUT", { status })
+    return await this.request<any>("/return-exchange-requests", "POST", requestData)
   }
 }

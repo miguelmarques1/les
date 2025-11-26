@@ -24,11 +24,5 @@ export class RabbitMQPublisherService implements MessagePublisherServiceInterfac
 
         const messageBuffer = Buffer.from(JSON.stringify(message));
         this.channel.publish(this.exchange, this.routingKey, messageBuffer, { persistent: true });
-        await this.close();
-    }
-
-    private async close(): Promise<void> {
-        await this.channel.close();
-        console.log('RabbitMQPublisherService: Canal AMQP fechado.');
     }
 }

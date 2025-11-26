@@ -1,4 +1,4 @@
-import type { CreateCustomerInputDTO, CustomerOutputDTO, UpdateCustomerInputDTO } from "../dto/customer.dto"
+import type { CreateCustomerInputDTO, CustomerOutputDTO, DeleteCustomerInputDTO, UpdateCustomerInputDTO } from "../dto/customer.dto"
 import { AddressService, type AddressServiceInterface } from "./address.service"
 import { Customer } from "../domain/entity/Customer"
 import { PhoneService, type PhoneServiceInterface } from "./phone.service"
@@ -10,11 +10,15 @@ import { Repository } from "typeorm"
 import { DBTransaction } from "../repositories/DBTransaction"
 import { fromValue } from "../domain/utils/fromValue"
 import { Gender } from "../domain/enums/Gender"
+import { encrypt } from "../helpers/encrypt"
+import { UnauthorizedException } from "../exceptions/UnauthorizedException"
+import { UserStatus } from "../domain/enums/UserStatus"
 
 export interface CustomerServiceInterface {
   store(input: CreateCustomerInputDTO): Promise<CustomerOutputDTO>
   show(id: number): Promise<CustomerOutputDTO>
   update(id: number, input: UpdateCustomerInputDTO): Promise<CustomerOutputDTO>
+  delete(input: DeleteCustomerInputDTO): Promise<boolean>
 }
 
 export class CustomerService implements CustomerServiceInterface {
@@ -28,6 +32,27 @@ export class CustomerService implements CustomerServiceInterface {
     this.transaction = repositoryFactory.createTransaction()
     this.phoneService = new PhoneService(repositoryFactory)
     this.addressService = new AddressService(repositoryFactory)
+  }
+
+  public async delete(input: DeleteCustomerInputDTO): Promise<boolean> {
+    const customer = await this.customerRepository.findOne({
+      where: {
+        id: input.customerId,
+      }
+    });
+    if(!customer) {
+      throw new NotFoundException("Usuário não existe");
+    }
+
+    const ableToDelete = customer.password.compare(input.password);
+    if(!ableToDelete) {
+      throw new UnauthorizedException("Credenciais inválidas");
+    }
+
+    customer.status = UserStatus.INACTIVE;
+    const result = await this.customerRepository.save(customer);
+
+    return result.status == UserStatus.INACTIVE;
   }
 
   public async update(id: number, input: UpdateCustomerInputDTO): Promise<CustomerOutputDTO> {

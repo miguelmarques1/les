@@ -45,6 +45,10 @@ export class OrderModel {
   }
 }
 
+export interface OrderUpdateStatusRequest {
+  status: string
+}
+
 export interface OrderRequest {
   address_id: number
   payment_method: string

@@ -1,0 +1,28 @@
+### Dashboard com período customizado (01/02/2025 a 13/04/2025)
+GET http://localhost:3000/api/admin/dashboard?startDate=2025-02-01&endDate=2025-04-13
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM2NjQzMDN9.ZeEeCpk26mKhUJ5RqS8dw3Zs8YB-dQUyp1uUAInl77U
+
+### Dashboard do ano de 2024 todo
+GET http://localhost:3000/api/admin/dashboard?startDate=2024-01-01&endDate=2024-12-31
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM2NjQzMDN9.ZeEeCpk26mKhUJ5RqS8dw3Zs8YB-dQUyp1uUAInl77U
+
+### Dashboard a partir de 01/11/2024
+GET http://localhost:3000/api/admin/dashboard?startDate=2024-11-01
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM2NjQzMDN9.ZeEeCpk26mKhUJ5RqS8dw3Zs8YB-dQUyp1uUAInl77U
+
+### Dashboard até 22/03/2024
+GET http://localhost:3000/api/admin/dashboard?endDate=2024-03-22
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM2NjQzMDN9.ZeEeCpk26mKhUJ5RqS8dw3Zs8YB-dQUyp1uUAInl77U
+
+### Dashboard sem período (todos os dados)
+GET http://localhost:3000/api/admin/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjM2NjQzMDN9.ZeEeCpk26mKhUJ5RqS8dw3Zs8YB-dQUyp1uUAInl77U
+
+### Admin Login - Autenticação com User abstrato
+POST http://localhost:3000/api/admin/auth
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin_password"
+}

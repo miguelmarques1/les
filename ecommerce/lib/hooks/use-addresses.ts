@@ -138,5 +138,5 @@ export function useAddresses() {
     }
   }
 
-  return { addresses, isLoading, error, createAddress, updateAddress, deleteAddress }
+  return { addresses, isLoading, error, createAddress, updateAddress, deleteAddress, fetchAddresses }
 }

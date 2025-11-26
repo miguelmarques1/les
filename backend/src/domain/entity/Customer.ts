@@ -4,24 +4,15 @@ import { UserStatus } from "../enums/UserStatus";
 import { Document } from "../vo/Document";
 import { CodeGenerator } from "../services/CodeGenerator";
 import { DefaultValidation } from "../validation/DefaultValidation";
-import { Password } from "../vo/Password";
 import { fromValue } from "../utils/fromValue";
 import { Address } from "./Address";
 import { Card } from "./Card";
 import { Cart } from "./Cart";
 import { Phone } from "./Phone";
+import { User } from "./User";
 
 @Entity()
-export class Customer {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({ unique: true, length: 255 })
-    email: string;
-
-    @Column({ length: 255 })
-    name: string;
-
+export class Customer extends User {
     @Column(() => Document)
     document: Document;
 
@@ -30,9 +21,6 @@ export class Customer {
 
     @Column({ unique: true })
     code: string;
-
-    @Column(() => Password)
-    password: Password;
 
     @Column({ type: 'enum', enum: Gender })
     gender: Gender;
@@ -66,27 +54,20 @@ export class Customer {
         status: string | null = null,
         ranking: number | null = null
     ) {
-        this.email = email;
-        this.name = name;
-        this.document = new Document(document);
+        super(email, name, password);
         this.birthdate = new Date(birthdate);
         this.gender = fromValue(Gender, gender);
-        this.status = status ? fromValue(UserStatus, status) : UserStatus.ACTIVE;
+        this.document = new Document(document);
         this.code = code ?? CodeGenerator.generate("CUS");
-        this.password = password ? new Password(password) : null;
         this.ranking = ranking;
+        this.status = status ? fromValue(UserStatus, status) : UserStatus.ACTIVE;
     }
 
     @BeforeInsert()
     @BeforeUpdate()
-    private validate() {
-        DefaultValidation.strDefaultLenght(this.name, "Nome deve ter no mínimo 2 caracteres e no máximo 255 caracteres");
-        DefaultValidation.strDefaultLenght(this.email, "Email deve ter no mínimo 2 caracteres e no máximo 255 caracteres");
-        DefaultValidation.strIsEmail(this.email, "Email inválido");
-
+    private validateCustomer() {
+        this.validate();
         DefaultValidation.notNull(this.birthdate, "Data de nascimento não pode ser nula");
         DefaultValidation.dateNotAfterToday(this.birthdate, "Data de nascimento não pode ser no futuro");
-
-        DefaultValidation.notNull(this.status, "Status do usuário não pode ser nulo");
     }
 }

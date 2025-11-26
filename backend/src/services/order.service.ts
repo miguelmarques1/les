@@ -27,11 +27,11 @@ export interface OrderServiceInterface {
   index(customerId: number): Promise<OrderOutputDTO[]>
   update(input: UpdateOrderStatusInputDTO): Promise<OrderOutputDTO>
   all(): Promise<OrderOutputDTO[]>
-  totalSales(): Promise<number>
-  totalOrders(): Promise<number>
-  averageOrderValue(): Promise<number>
-  getRecentOrders(): Promise<OrderOutputDTO[]>
-  monthlySales(): Promise<MonthlySalesOutputDTO[]>
+  totalSales(startDate?: Date, endDate?: Date): Promise<number>
+  totalOrders(startDate?: Date, endDate?: Date): Promise<number>
+  averageOrderValue(startDate?: Date, endDate?: Date): Promise<number>
+  getRecentOrders(startDate?: Date, endDate?: Date): Promise<OrderOutputDTO[]>
+  monthlySales(startDate?: Date, endDate?: Date): Promise<MonthlySalesOutputDTO[]>
 }
 
 export class OrderService implements OrderServiceInterface {
@@ -61,42 +61,45 @@ export class OrderService implements OrderServiceInterface {
     this.messageService = new RabbitMQPublisherService()
   }
 
-  async monthlySales(): Promise<MonthlySalesOutputDTO[]> {
-    return this.orderRepository.monthlySales()
+  async monthlySales(startDate?: Date, endDate?: Date): Promise<MonthlySalesOutputDTO[]> {
+    return this.orderRepository.monthlySales(startDate, endDate)
   }
 
-  async totalSales(): Promise<number> {
-    return this.orderRepository.totalSales()
+  async totalSales(startDate?: Date, endDate?: Date): Promise<number> {
+    return this.orderRepository.totalSales(startDate, endDate)
   }
 
-  async totalOrders(): Promise<number> {
-    return this.orderRepository.totalOrders()
+  async totalOrders(startDate?: Date, endDate?: Date): Promise<number> {
+    return this.orderRepository.totalOrders(startDate, endDate)
   }
 
-  async averageOrderValue(): Promise<number> {
-    return this.orderRepository.averageOrderValue();
+  async averageOrderValue(startDate?: Date, endDate?: Date): Promise<number> {
+    return this.orderRepository.averageOrderValue(startDate, endDate);
   }
 
-  async getRecentOrders(): Promise<OrderOutputDTO[]> {
-    const orders = await this.orderRepository.find({
-      order: {
-        createdAt: 'DESC',
-      },
-      take: 5,
-      relations: {
-        items: {
-          book: {
-            categories: true,
-            precificationGroup: true,
-          },
-        },
-        customer: true,
-        transaction: {
-          coupon: true,
-          order: false,
-        },
-      }
-    });
+  async getRecentOrders(startDate?: Date, endDate?: Date): Promise<OrderOutputDTO[]> {
+    let queryBuilder = this.orderRepository.createQueryBuilder("order")
+      .take(5)
+      .orderBy("order.createdAt", "DESC");
+
+    if (startDate) {
+      queryBuilder = queryBuilder.andWhere("order.createdAt >= :startDate", { startDate });
+    }
+
+    if (endDate) {
+      queryBuilder = queryBuilder.andWhere("order.createdAt <= :endDate", { endDate });
+    }
+
+    const orders = await queryBuilder
+      .leftJoinAndSelect("order.items", "items")
+      .leftJoinAndSelect("items.book", "book")
+      .leftJoinAndSelect("book.categories", "categories")
+      .leftJoinAndSelect("book.precificationGroup", "precificationGroup")
+      .leftJoinAndSelect("order.customer", "customer")
+      .leftJoinAndSelect("order.transaction", "transaction")
+      .leftJoinAndSelect("transaction.coupon", "coupon")
+      .getMany();
+
     return orders.map(OrderMapper.entityToOutputDTO);
   }
 

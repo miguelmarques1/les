@@ -1,56 +1,48 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
+import { services } from "@/services"
+import { useToast } from "@/hooks/use-toast"
 
 export default function CustomersPage() {
-  const customers = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@example.com",
-      document: "123.456.789-00",
-      gender: "MALE",
-      ranking: 4,
-      orders: 12,
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      document: "987.654.321-00",
-      gender: "FEMALE",
-      ranking: 5,
-      orders: 24,
-    },
-    {
-      id: 3,
-      name: "Robert Johnson",
-      email: "robert.johnson@example.com",
-      document: "456.789.123-00",
-      gender: "MALE",
-      ranking: 3,
-      orders: 8,
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.davis@example.com",
-      document: "789.123.456-00",
-      gender: "FEMALE",
-      ranking: 4,
-      orders: 15,
-    },
-    {
-      id: 5,
-      name: "Michael Wilson",
-      email: "michael.wilson@example.com",
-      document: "321.654.987-00",
-      gender: "MALE",
-      ranking: 2,
-      orders: 5,
-    },
-  ]
+  const [customers, setCustomers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const { toast } = useToast()
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true)
+      const data = await services.customerService.getAllUsers()
+      setCustomers(data)
+    } catch (error) {
+      console.error("Failed to fetch customers:", error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os clientes.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
+
+  const filteredCustomers = customers.filter((customer) => {
+    const searchLower = searchQuery.toLowerCase()
+    return (
+      customer.name?.toLowerCase().includes(searchLower) ||
+      customer.email?.toLowerCase().includes(searchLower) ||
+      customer.document?.toLowerCase().includes(searchLower)
+    )
+  })
 
   const renderRanking = (ranking: number) => {
     return Array(5)
@@ -62,6 +54,17 @@ export default function CustomersPage() {
       ))
   }
 
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Customers</h1>
+        </div>
+        <p>Carregando clientes...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -70,7 +73,12 @@ export default function CustomersPage() {
 
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input placeholder="Search by name, email, or document..." className="pl-10" />
+        <Input
+          placeholder="Search by name, email, or document..."
+          className="pl-10"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
       <Card>
@@ -89,17 +97,17 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
+              {filteredCustomers.map((customer) => (
                 <tr key={customer.id} className="border-b hover:bg-muted/50">
                   <td className="p-4">{customer.id}</td>
-                  <td className="p-4 font-medium">{customer.name}</td>
+                  <td className="p-4 font-medium">{customer.name || "N/A"}</td>
                   <td className="p-4">{customer.email}</td>
-                  <td className="p-4">{customer.document}</td>
-                  <td className="p-4">{customer.gender}</td>
+                  <td className="p-4">{customer.document || "N/A"}</td>
+                  <td className="p-4">{customer.gender || "N/A"}</td>
                   <td className="p-4">
-                    <div className="flex">{renderRanking(customer.ranking)}</div>
+                    <div className="flex">{renderRanking(customer.ranking || 0)}</div>
                   </td>
-                  <td className="p-4">{customer.orders}</td>
+                  <td className="p-4">{customer.orders || 0}</td>
                   <td className="p-4">
                     <Button variant="outline" size="sm">
                       View Details

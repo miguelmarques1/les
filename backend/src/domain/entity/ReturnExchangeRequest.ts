@@ -87,4 +87,13 @@ export class ReturnExchangeRequest {
             );
         }
     }
+
+    public getAmount() {
+        let total = 0;
+        for(let item of this.items) {
+            total += item.costsValue;
+        }
+
+        return total;
+    }
 }

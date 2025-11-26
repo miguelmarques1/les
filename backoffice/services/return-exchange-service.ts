@@ -16,7 +16,7 @@ export class ReturnExchangeService {
     return this.apiService.getAllReturnExchangeRequests()
   }
 
-  async updateStatus(requestId: number, status: string): Promise<any> {
+  async updateStatus(requestId: number, status: string): Promise<ReturnExchangeModel> {
     return this.apiService.updateReturnExchangeStatus(requestId, status)
   }
 }

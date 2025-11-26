@@ -59,9 +59,12 @@ services:
       - DATABASE_URL=postgres://backend:5cZ7SJq2e88y@backend-db:5432/les
       - GEMINI_MODEL=gemini-2.0-flash
       - PORT=3000
+      - SENDGRID_SENDER_EMAIL=extevao09@gmail.com
+      - SENDGRID_SENDER_NAME=Livraria XYZ Support
     secrets:
       - gemini_api_key
       - jwt_secret
+      - sendgrid_api_key
     ports:
       - "3000:3000"
     depends_on:
@@ -201,6 +204,8 @@ secrets:
     file: ./secrets/jwt_secret.txt
   gemini_api_key:
     file: ./secrets/gemini_api_key.txt
+  sendgrid_api_key:
+    file: ./secrets/sendgrid_api_key.txt
 
 volumes:
   payment-db-data:

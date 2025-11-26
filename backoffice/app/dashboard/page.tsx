@@ -5,157 +5,54 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { StockOverview } from "@/components/dashboard/stock-overview"
 import { RecentOrders } from "@/components/dashboard/recent-orders"
-import {
-  DashboardFilters,
-  type DashboardFilters as DashboardFiltersType,
-} from "@/components/dashboard/dashboard-filters"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 import { apiService } from "@/services"
 import type { DashboardData } from "@/services/api-service"
-
-const mockDashboardData: DashboardData = {
-  summary: {
-    totalSales: 45231.89,
-    formattedTotalSales: "R$ 45.231,89",
-    totalOrders: 1234,
-    averageOrderValue: 36.67,
-    formattedAverageOrderValue: "R$ 36,67",
-    inventoryCount: 2543,
-    lowStockItems: 12,
-  },
-  salesData: [
-    { month: "jan.", monthNumber: 1, totalSales: 4000, totalOrders: 120, averageOrderValue: 33.33, year: 2024 },
-    { month: "fev.", monthNumber: 2, totalSales: 3000, totalOrders: 98, averageOrderValue: 30.61, year: 2024 },
-    { month: "mar.", monthNumber: 3, totalSales: 5000, totalOrders: 142, averageOrderValue: 35.21, year: 2024 },
-    { month: "abr.", monthNumber: 4, totalSales: 4500, totalOrders: 128, averageOrderValue: 35.16, year: 2024 },
-    { month: "mai.", monthNumber: 5, totalSales: 6000, totalOrders: 165, averageOrderValue: 36.36, year: 2024 },
-    { month: "jun.", monthNumber: 6, totalSales: 5500, totalOrders: 152, averageOrderValue: 36.18, year: 2024 },
-  ],
-  recentOrders: [],
-  categoryOverview: [
-    { categoryId: 1, categoryName: "Ficção", percentage: 35, totalItems: 450, colorCode: "#8884d8" },
-    { categoryId: 2, categoryName: "Romance", percentage: 25, totalItems: 320, colorCode: "#82ca9d" },
-    { categoryId: 3, categoryName: "Suspense", percentage: 20, totalItems: 256, colorCode: "#ffc658" },
-    { categoryId: 4, categoryName: "Terror", percentage: 12, totalItems: 154, colorCode: "#ff7300" },
-    { categoryId: 5, categoryName: "Fantasia", percentage: 8, totalItems: 102, colorCode: "#00ff00" },
-  ],
-}
-
-const defaultFilters: DashboardFiltersType = {
-  dateRange: {
-    from: undefined,
-    to: undefined,
-  },
-  orderStatus: [],
-  categories: [],
-  period: "30d",
-}
+import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData>(mockDashboardData)
-  const [filteredData, setFilteredData] = useState<DashboardData>(mockDashboardData)
-  const [filters, setFilters] = useState<DashboardFiltersType>(defaultFilters)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [applyingFilters, setApplyingFilters] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const { toast } = useToast()
 
-  const fetchDashboardData = async (appliedFilters?: DashboardFiltersType) => {
+  const fetchDashboardData = async (start?: Date, end?: Date) => {
     try {
       setLoading(true)
-      // Em uma implementação real, você passaria os filtros para a API
-      const data = await apiService.getDashboardData()
-      setDashboardData(data)
+      const startDateStr = start ? format(start, "yyyy-MM-dd") : undefined
+      const endDateStr = end ? format(end, "yyyy-MM-dd") : undefined
 
-      // Aplicar filtros localmente (em produção, isso seria feito no backend)
-      const filtered = applyFiltersToData(data, appliedFilters || filters)
-      setFilteredData(filtered)
+      const data = await apiService.getDashboardData(startDateStr, endDateStr)
+      setDashboardData(data)
       setError(null)
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err)
-      setError("Falha ao carregar dados do dashboard. Usando dados de exemplo.")
-
-      // Aplicar filtros aos dados mock
-      const filtered = applyFiltersToData(mockDashboardData, appliedFilters || filters)
-      setFilteredData(filtered)
+      setError("Falha ao carregar dados do dashboard.")
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do dashboard.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const applyFiltersToData = (data: DashboardData, appliedFilters: DashboardFiltersType): DashboardData => {
-    const filtered = { ...data }
-
-    // Filtrar pedidos recentes por status
-    if (appliedFilters.orderStatus.length > 0) {
-      filtered.recentOrders = data.recentOrders.filter((order) => appliedFilters.orderStatus.includes(order.status))
-    }
-
-    // Filtrar categorias
-    if (appliedFilters.categories.length > 0) {
-      filtered.categoryOverview = data.categoryOverview.filter((category) =>
-        appliedFilters.categories.includes(category.categoryName),
-      )
-    }
-
-    // Filtrar dados de vendas por período
-    if (appliedFilters.period !== "30d") {
-      filtered.salesData = filterSalesDataByPeriod(data.salesData, appliedFilters.period)
-    }
-
-    // Filtrar por data personalizada
-    if (appliedFilters.period === "custom" && (appliedFilters.dateRange.from || appliedFilters.dateRange.to)) {
-      // Implementar filtro por data personalizada
-      // Esta lógica dependeria da estrutura real dos dados
-    }
-
-    return filtered
-  }
-
-  const filterSalesDataByPeriod = (salesData: any[], period: string) => {
-    const now = new Date()
-    let startDate: Date
-
-    switch (period) {
-      case "7d":
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        break
-      case "30d":
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        break
-      case "90d":
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-        break
-      case "6m":
-        startDate = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000)
-        break
-      case "1y":
-        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-        break
-      default:
-        return salesData
-    }
-
-    // Para dados mock, retornamos todos os dados
-    // Em produção, você filtraria baseado na data real
-    return salesData
-  }
-
-  const handleFiltersChange = (newFilters: DashboardFiltersType) => {
-    setFilters(newFilters)
-  }
-
-  const handleApplyFilters = async () => {
-    setApplyingFilters(true)
-    try {
-      await fetchDashboardData(filters)
-    } finally {
-      setApplyingFilters(false)
-    }
+  const handleApplyFilters = () => {
+    fetchDashboardData(startDate, endDate)
   }
 
   const handleClearFilters = () => {
-    setFilters(defaultFilters)
-    const filtered = applyFiltersToData(dashboardData, defaultFilters)
-    setFilteredData(filtered)
+    setStartDate(undefined)
+    setEndDate(undefined)
+    fetchDashboardData()
   }
 
   useEffect(() => {
@@ -186,26 +83,75 @@ export default function Dashboard() {
     )
   }
 
+  if (error || !dashboardData) {
+    return (
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-800 text-sm">{error || "Erro ao carregar dados"}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
 
-      {error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-          <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <DashboardFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onApplyFilters={handleApplyFilters}
-        onClearFilters={handleClearFilters}
-        isLoading={applyingFilters}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros de Período</CardTitle>
+          <CardDescription>Selecione um período para visualizar os dados</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium">Data Início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : "Selecione a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium">Data Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : "Selecione a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleApplyFilters}>Aplicar Filtros</Button>
+              <Button onClick={handleClearFilters} variant="outline">
+                Limpar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -226,8 +172,8 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.formattedTotalSales}</div>
-              <p className="text-xs text-muted-foreground">+20.1% em relação ao mês passado</p>
+              <div className="text-2xl font-bold">{dashboardData.summary.formattedTotalSales}</div>
+              <p className="text-xs text-muted-foreground">Total de vendas no período</p>
             </CardContent>
           </Card>
           <Card>
@@ -249,8 +195,8 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">+180.1% em relação ao mês passado</p>
+              <div className="text-2xl font-bold">{dashboardData.summary.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">Total de pedidos no período</p>
             </CardContent>
           </Card>
           <Card>
@@ -271,8 +217,8 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.formattedAverageOrderValue}</div>
-              <p className="text-xs text-muted-foreground">+19% em relação ao mês passado</p>
+              <div className="text-2xl font-bold">{dashboardData.summary.formattedAverageOrderValue}</div>
+              <p className="text-xs text-muted-foreground">Valor médio por pedido</p>
             </CardContent>
           </Card>
           <Card>
@@ -292,9 +238,9 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.inventoryCount}</div>
+              <div className="text-2xl font-bold">{dashboardData.summary.inventoryCount}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredData.summary.lowStockItems} itens com estoque baixo
+                {dashboardData.summary.lowStockItems} itens com estoque baixo
               </p>
             </CardContent>
           </Card>
@@ -303,9 +249,10 @@ export default function Dashboard() {
           <Card className="col-span-4">
             <CardHeader>
               <CardTitle>Vendas</CardTitle>
+              <CardDescription>Vendas por mês no período selecionado</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              <SalesChart data={filteredData.salesData} />
+              <SalesChart data={dashboardData.salesData} />
             </CardContent>
           </Card>
           <Card className="col-span-3">
@@ -314,7 +261,7 @@ export default function Dashboard() {
               <CardDescription>Distribuição do estoque por categoria</CardDescription>
             </CardHeader>
             <CardContent>
-              <StockOverview data={filteredData.categoryOverview} />
+              <StockOverview data={dashboardData.categoryOverview} />
             </CardContent>
           </Card>
         </div>
@@ -322,17 +269,10 @@ export default function Dashboard() {
           <Card className="col-span-7">
             <CardHeader>
               <CardTitle>Pedidos Recentes</CardTitle>
-              <CardDescription>
-                Últimos pedidos realizados na plataforma
-                {filteredData.recentOrders.length !== dashboardData.recentOrders.length && (
-                  <span className="ml-2 text-sm text-blue-600">
-                    ({filteredData.recentOrders.length} de {dashboardData.recentOrders.length} pedidos)
-                  </span>
-                )}
-              </CardDescription>
+              <CardDescription>Últimos pedidos realizados na plataforma</CardDescription>
             </CardHeader>
             <CardContent>
-              <RecentOrders orders={filteredData.recentOrders} />
+              <RecentOrders orders={dashboardData.recentOrders} />
             </CardContent>
           </Card>
         </div>

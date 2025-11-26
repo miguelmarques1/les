@@ -16,7 +16,7 @@ export class OrderService {
     return this.apiService.getOrders()
   }
 
-  async getAllOrders(): Promise<any[]> {
+  async getAllOrders(): Promise<OrderModel[]> {
     return this.apiService.getAllOrders()
   }
 
@@ -24,7 +24,7 @@ export class OrderService {
     return this.apiService.getOrderById(id)
   }
 
-  async updateOrderStatus(id: number, status: string): Promise<any> {
+  async updateOrderStatus(id: number, status: string): Promise<OrderModel> {
     return this.apiService.updateOrderStatus(id, status)
   }
 }

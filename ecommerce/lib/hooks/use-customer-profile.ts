@@ -60,5 +60,30 @@ export function useCustomerProfile() {
     }
   }
 
+  const deleteProfile = async(password: string) => {
+    setIsLoading(true);
+    try {
+      const success = await customerService.deleteProfile(password);
+      if(!success) {
+        throw new Error("Falha ao desativar a conta");
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Sua conta foi desativada com sucesso.',
+      });
+    } catch(err) {
+      console.error("Failed to delete profile:", err)
+      toast({
+        title: "Erro",
+        description: (err as Error).message ??  "Não foi possível desativar a sua conta.",
+        variant: "destructive",
+      })
+      throw err
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return { profile, isLoading, error, updateProfile, refreshProfile: fetchProfile }
 }

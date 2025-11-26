@@ -7,14 +7,10 @@ import { BookSeeder } from "./BookSeeder";
 import { BookCategorySeeder } from "./BookCategorySeeder";
 import { Seeder } from "./interface/Seeder";
 import { CouponSeeder } from "./CouponSeeder";
+import { AdminSeeder } from "./AdminSeeder";
 
 const seeds: Seeder[] = [
-  new CouponSeeder(),
-  new BrandSeeder(),
-  new CategorySeeder(),
-  new PrecificationGroupSeeder(),
-  new BookSeeder(),
-  new BookCategorySeeder(),
+  new AdminSeeder(),
 ];
 
 async function runSeeder() {

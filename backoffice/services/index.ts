@@ -38,7 +38,19 @@ export const services = {
   order: orderService,
 }
 
-// Export types
-export type { DashboardData, SalesData, CategoryOverview, RecentOrder } from "./api-service"
+// Export model types
+export type {
+  DashboardData,
+  DashboardSummary,
+  SalesDataItem,
+  CategoryOverviewItem,
+  RecentOrderItem,
+} from "../models/dashboard-model"
+export type { UserData } from "../models/user-model"
+export type { CouponModel, CouponCreateRequest } from "../models/coupon-model"
+export type { BrandModel, BrandCreateRequest } from "../models/brand-model"
+export type { ReturnExchangeModel } from "../models/return-exchange-model"
+export type { AdminAuthRequest } from "../models/admin-auth-model"
+export type { ApiResponse } from "../types/api-response"
 export type { User, AuthState } from "./auth-service"
-export type { StockAddRequest, StockResponse } from "../models/stock-request"
+export type { StockBookModel } from "../models/stock-book-model"

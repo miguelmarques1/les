@@ -19,4 +19,8 @@ export class CustomerService {
   async updateCustomerProfile(updateData: CustomerUpdateRequest): Promise<CustomerModel> {
     return this.apiService.updateCustomerProfile(updateData)
   }
+
+  async getAllUsers(): Promise<CustomerModel[]> {
+    return this.apiService.getAllUsers()
+  }
 }

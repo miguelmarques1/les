@@ -75,5 +75,5 @@ export function useCards() {
     }
   };
 
-  return { cards, isLoading, error, createCard, deleteCard };
+  return { cards, isLoading, error, createCard, deleteCard, fetchCards };
 }

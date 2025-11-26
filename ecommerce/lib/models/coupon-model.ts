@@ -22,7 +22,7 @@ export class CouponModel {
       map.id,
       map.code,
       map.type,
-      map.discount,
+      Number(map.discount),
       new Date(map.expiry_date),
       map.is_active !== undefined ? map.is_active : true,
     )

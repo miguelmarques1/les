@@ -13,6 +13,11 @@ import { RepositoryFactory } from "../factories/RepositoryFactory"
 import { Customer } from "../domain/entity/Customer"
 import { UnauthorizedException } from "../exceptions/UnauthorizedException"
 import { NotFoundException } from "../exceptions/NotFoundException"
+import { Coupon } from "../domain/entity/Coupon"
+import { CodeGenerator } from "../domain/services/CodeGenerator"
+import { ReturnExchangeType } from "../domain/enums/ReturnExchangeRequestType"
+import { copyFile } from "fs"
+import { EmailService, EmailServiceInterface } from "./email.service"
 
 export interface ReturnExchangeRequestServiceInterface {
   update(status: string, returnExchangeRequestId: number): Promise<ReturnExchangeRequestOutputDTO>
@@ -25,11 +30,15 @@ export class ReturnExchangeRequestService implements ReturnExchangeRequestServic
   private returnExchangeRequestRepository: Repository<ReturnExchangeRequest>;
   private stockBookRepository: Repository<StockBook>;
   private customerRepository: Repository<Customer>;
+  private couponRepository: Repository<Coupon>;
+  private emailService: EmailServiceInterface;
 
   constructor(repositoryFactory: RepositoryFactory) {
     this.returnExchangeRequestRepository = repositoryFactory.getReturnExchangeRequestRepository();
     this.stockBookRepository = repositoryFactory.getStockBookRepository();
     this.customerRepository = repositoryFactory.getCustomerRepository();
+    this.couponRepository = repositoryFactory.getCouponRepository();
+    this.emailService = new EmailService();
   }
 
   public async update(status: string, returnExchangeRequestId: number): Promise<ReturnExchangeRequestOutputDTO> {
@@ -47,7 +56,7 @@ export class ReturnExchangeRequestService implements ReturnExchangeRequestServic
         customer: true,
       }
     })
-    if(!request) {
+    if (!request) {
       throw new NotFoundException("Pedido não encontrado");
     }
 
@@ -60,6 +69,7 @@ export class ReturnExchangeRequestService implements ReturnExchangeRequestServic
     ].includes(newStatus)
     if (requestCompleted) {
       await this.returnItems(request.items)
+      await this.generateCoupon(request);
     }
 
     return ReturnExchangeRequestMapper.entityToOutputDTO(request);
@@ -133,5 +143,21 @@ export class ReturnExchangeRequestService implements ReturnExchangeRequestServic
       stockBook.status = StockBookStatus.AVAILABLE;
       await this.stockBookRepository.save(stockBook);
     }
+  }
+
+  private async generateCoupon(request: ReturnExchangeRequest) {
+    const couponCode = CodeGenerator.generate(request.type == ReturnExchangeType.EXCHANGE ? 'EXC' : 'RET');
+    const couponAmount = request.getAmount();
+    const couponExpiryDate = new Date();
+    couponExpiryDate.setMonth(couponExpiryDate.getMonth() + 1);
+    const coupon = new Coupon(couponCode, couponAmount, 'VALUE', 'AVAILABLE', couponExpiryDate);
+    
+    await this.couponRepository.save(coupon);
+    await this.sendCoupon(request.customer, coupon);
+  }
+
+  private async sendCoupon(customer: Customer, coupon: Coupon) {
+    const message = `Foi gerado um cupom de troca/devolução para você no valor de ${coupon.discount}, o código é ${coupon.code}`;
+    await this.emailService.send(customer.email, message);
   }
 }

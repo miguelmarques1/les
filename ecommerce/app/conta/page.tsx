@@ -30,6 +30,7 @@ import AddressModal from "@/components/address-modal"
 import CardModal from "@/components/card-modal"
 import ExchangeRequestModal from "@/components/exchange-request-modal"
 import { useToast } from "@/hooks/use-toast"
+import DeactivateAccountModal from "@/components/deactivation-account-modal"
 
 export default function CustomerAccountPage() {
   const [activeTab, setActiveTab] = useState("orders")
@@ -37,8 +38,8 @@ export default function CustomerAccountPage() {
   const { toast } = useToast()
 
   // Only initialize hooks if user is authenticated
-  const { addresses, isLoading: isAddressesLoading, deleteAddress } = useAddresses()
-  const { cards, isLoading: isCardsLoading, deleteCard } = useCards()
+  const { addresses, isLoading: isAddressesLoading, deleteAddress, fetchAddresses } = useAddresses()
+  const { cards, isLoading: isCardsLoading, deleteCard, fetchCards } = useCards()
   const { orders, isLoading: isOrdersLoading, fetchOrders } = useOrders()
   const { profile, isLoading: isProfileLoading, updateProfile } = useCustomerProfile()
   const { requests, isLoading: isRequestsLoading, getMyRequests } = useReturnExchange()
@@ -51,6 +52,7 @@ export default function CustomerAccountPage() {
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false)
   const [selectedAddress, setSelectedAddress] = useState<any>(null)
   const [selectedOrderForExchange, setSelectedOrderForExchange] = useState<any>(null)
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -806,6 +808,27 @@ export default function CustomerAccountPage() {
                           </div>
                           <Button className="mt-4">Salvar Preferências</Button>
                         </div>
+
+                        <Separator />
+      
+                        <div>
+                          <h3 className="font-medium text-gray-800 mb-2 text-red-600">Zona de Perigo</h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Ações irreversíveis relacionadas à sua conta
+                          </p>
+                          <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                            <h4 className="font-medium text-gray-800 mb-2">Desativar Conta</h4>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Ao desativar sua conta, você não poderá mais acessá-la e seus dados serão mantidos por um período de recuperação.
+                            </p>
+                            <Button 
+                              variant="destructive" 
+                              onClick={() => setIsDeactivateModalOpen(true)}
+                            >
+                              Desativar Minha Conta
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -835,6 +858,7 @@ export default function CustomerAccountPage() {
         onClose={() => setIsAddressModalOpen(false)}
         onSuccess={() => {
           setIsAddressModalOpen(false)
+          fetchAddresses()
         }}
         editAddress={selectedAddress}
       />
@@ -842,7 +866,10 @@ export default function CustomerAccountPage() {
       <CardModal
         isOpen={isCardModalOpen}
         onClose={() => setIsCardModalOpen(false)}
-        onSuccess={() => setIsCardModalOpen(false)}
+        onSuccess={() => {
+          setIsCardModalOpen(false)
+          fetchCards()
+        }}
       />
 
       {selectedOrderForExchange && (
@@ -856,6 +883,11 @@ export default function CustomerAccountPage() {
           orderItems={selectedOrderForExchange.items}
         />
       )}
+
+      <DeactivateAccountModal
+        isOpen={isDeactivateModalOpen}
+        onClose={() => setIsDeactivateModalOpen(false)}
+      />
     </AuthGuard>
   )
 }

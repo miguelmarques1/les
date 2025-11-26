@@ -19,6 +19,7 @@ import { Document } from "./domain/vo/Document";
 import { ISBN } from "./domain/vo/ISBN";
 import { Transaction } from "./domain/entity/Transaction";
 import { Password } from "./domain/vo/Password";
+import { Admin } from "./domain/entity/Admin";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ export const AppDataSource = new DataSource({
     Category,
     Coupon,
     Customer,
+    Admin,
     Order,
     Phone,
     PrecificationGroup,
