@@ -112,9 +112,6 @@ export class RecommendationService {
       ]
     }`;
     }
-
-
-
     private parseResponse(aiResponse: string): RecommendationResponse {
         try {
             const jsonStart = aiResponse.indexOf('{');
@@ -132,7 +129,7 @@ export class RecommendationService {
                 })) || []
             };
         } catch (e) {
-            return {
+            return {,
                 message: aiResponse,
                 recommendations: []
             };

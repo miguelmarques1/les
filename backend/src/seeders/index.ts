@@ -11,6 +11,12 @@ import { AdminSeeder } from "./AdminSeeder";
 
 const seeds: Seeder[] = [
   new AdminSeeder(),
+  new BrandSeeder(),
+  new CategorySeeder(),
+  new PrecificationGroupSeeder(),
+  new BookSeeder(),
+  new BookCategorySeeder(),
+  new CouponSeeder(),
 ];
 
 async function runSeeder() {
