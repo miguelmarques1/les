@@ -69,29 +69,20 @@ export class AdminService implements AdminServiceInterface {
             where: { email },
         });
 
-        if (admin) {
-            const validCredentials = await encrypt.comparepassword(admin.password.value, password);
-            if (!validCredentials) {
-                throw new UnauthorizedException("Email ou senha inválidos");
-            }
-
-            const accessToken = encrypt.generateToken({
-                id: admin.id.toString(),
-                role: "admin",
-            });
-            return new AuthOutputDTO(accessToken);
+        if(!admin) {
+            throw new UnauthorizedException("Email ou senha inválidos");
         }
 
-        // Fallback to environment variables for default admin (backwards compatibility)
-        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-            const accessToken = encrypt.generateToken({
-                id: "admin",
-                role: "admin",
-            });
-            return new AuthOutputDTO(accessToken);
+        const validCredentials = await encrypt.comparepassword(admin.password.value, password);
+        if (!validCredentials) {
+            throw new UnauthorizedException("Email ou senha inválidos");
         }
 
-        throw new UnauthorizedException("Email ou senha inválidos");
+        const accessToken = encrypt.generateToken({
+            id: admin.id.toString(),
+            role: "admin",
+        });
+        return new AuthOutputDTO(accessToken);
     }
     
     public async dashboard(startDate?: Date, endDate?: Date): Promise<DashboardDataOutputDTO> {
