@@ -13,7 +13,8 @@ import { DashboardService } from "./dashboard-service"
 import { StockService } from "./stock-service"
 
 // Create single instances to be shared across the app
-export const apiService = new ApiService()
+export const apiService = new ApiService(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api")
+
 export const authService = new AuthService()
 export const bookService = new BookService(apiService)
 export const couponService = new CouponService(apiService)

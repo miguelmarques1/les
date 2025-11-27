@@ -38,7 +38,7 @@ export class ApiService {
   private baseUrl: string
   private accessToken: string | null = null
 
-  constructor(baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api") {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl
   }
 
@@ -53,7 +53,6 @@ export class ApiService {
   private async request<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
     }
 
     if (this.accessToken) {

@@ -7,14 +7,14 @@ import { router } from "./routes/router";
 dotenv.config();
 
 const app = express();
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 const { PORT = 3000 } = process.env;
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
 app.use('/api', router);
 
 AppDataSource.initialize()

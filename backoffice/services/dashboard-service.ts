@@ -31,7 +31,6 @@ export class DashboardService {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiService["accessToken"]}`,
-        "ngrok-skip-browser-warning": "true"
       },
     })
 
