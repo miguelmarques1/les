@@ -25,9 +25,3 @@ export class BrandModel {
 export interface BrandCreateRequest {
   name: string
 }
-
-export interface BrandData {
-  id: number
-  name: string
-  image_url?: string
-}

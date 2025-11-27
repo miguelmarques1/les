@@ -20,7 +20,7 @@ export class CustomerService {
     return this.apiService.updateCustomerProfile(updateData)
   }
 
-  async getAllUsers(): Promise<CustomerModel[]> {
+  async getAllUsers(): Promise<any[]> {
     return this.apiService.getAllUsers()
   }
 }

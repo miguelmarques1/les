@@ -53,7 +53,9 @@ export default function CardBrandsPage() {
     const name = formData.get("name") as string
 
     try {
-      await services.brandService.createBrand(name)
+      await services.brandService.createBrand({
+        name: name,
+      })
 
       toast({
         title: "Sucesso",

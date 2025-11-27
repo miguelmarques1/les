@@ -1,5 +1,6 @@
 import type { BookModel } from "../models/book-model"
 import type { ApiService } from "./api-service"
+import type { StockAddRequest, StockResponse } from "../models/stock-request"
 
 export class BookService {
   private apiService: ApiService
@@ -20,12 +21,7 @@ export class BookService {
     return this.apiService.searchBooks(query)
   }
 
-  async addStock(stockData: {
-    book_id: number
-    supplier: string
-    quantity: number
-    costs_value: number
-  }): Promise<any> {
+  async addStock(stockData: StockAddRequest): Promise<StockResponse> {
     return this.apiService.addStock(stockData)
   }
 }

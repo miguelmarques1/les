@@ -8,7 +8,7 @@ export interface DashboardSummary {
   lowStockItems: number
 }
 
-export interface SalesDataItem {
+export interface SalesData {
   month: string
   monthNumber: number
   totalSales: number
@@ -17,54 +17,10 @@ export interface SalesDataItem {
   year: number
 }
 
-export interface CategoryOverviewItem {
-  categoryId: string
-  categoryName: string
-  percentage: number
-  totalItems: number
-  colorCode: string
-}
-
-export interface OrderItem {
-  status: string
-  code: string
-  supplier: string
-  costs_value: string
-  book_details: {
-    id: number
-    author: string
-    categories: Array<{
-      id: number
-      name: string
-    }>
-    year: number
-    title: string
-    publisher: string
-    precification_group: {
-      id: number
-      name: string
-      profit_percentage: string
-    }
-    edition: number
-    pages: number
-    synopsis: string
-    height: string
-    width: string
-    weight: string
-    depth: string
-    isbn: string
-    status: string
-  }
-  entry_date: string
-  id: number
-  sale_date: string
-  unit_price: number
-  order_item_id: number
-}
-
-export interface RecentOrderItem {
+export interface RecentOrder {
   id: number
   address: {
+    id: number
     alias: string
     type: string
     residence_type: string
@@ -76,24 +32,38 @@ export interface RecentOrderItem {
     city: string
     state: string
     country: string
-    observations: string | null
+    customerId: number
+    observations: string
   }
   status: string
-  items: OrderItem[]
+  items: Array<{
+    status: string
+    code: string
+    supplier: string
+    costs_value: number
+    book_details: any
+    entry_date: string
+    id: number
+    sale_date: string
+    unit_price: number
+    order_item_id: number
+  }>
   transaction: {
     id: number
-    amount: string
+    amount: number
     card: {
+      id: number
       number: string
       holder_name: string
       expiry_date: string
       brand_id: number
+      customer_id: number
     }
     date: string
-    coupon?: {
+    coupon: {
       id: number
       code: string
-      discount: string
+      discount: number
       type: string
       status: string
       expiryDate: string
@@ -101,41 +71,23 @@ export interface RecentOrderItem {
   }
 }
 
-export interface DashboardData {
-  summary: DashboardSummary
-  salesData: SalesDataItem[]
-  recentOrders: RecentOrderItem[]
-  categoryOverview: CategoryOverviewItem[]
+export interface CategoryOverview {
+  categoryId: number
+  categoryName: string
+  percentage: number
+  totalItems: number
+  colorCode: string
 }
 
-export class DashboardModel {
+export interface DashboardData {
   summary: DashboardSummary
-  salesData: SalesDataItem[]
-  recentOrders: RecentOrderItem[]
-  categoryOverview: CategoryOverviewItem[]
+  salesData: SalesData[]
+  recentOrders: RecentOrder[]
+  categoryOverview: CategoryOverview[]
+}
 
-  constructor(data: DashboardData) {
-    this.summary = data.summary
-    this.salesData = data.salesData
-    this.recentOrders = data.recentOrders
-    this.categoryOverview = data.categoryOverview
-  }
-
-  static fromMap(map: any): DashboardModel {
-    return new DashboardModel({
-      summary: map.summary,
-      salesData: map.salesData || [],
-      recentOrders: map.recentOrders || [],
-      categoryOverview: map.categoryOverview || [],
-    })
-  }
-
-  toMap(): Record<string, any> {
-    return {
-      summary: this.summary,
-      salesData: this.salesData,
-      recentOrders: this.recentOrders,
-      categoryOverview: this.categoryOverview,
-    }
-  }
+export interface DashboardResponse {
+  data: DashboardData
+  error: boolean
+  message: string | null
 }

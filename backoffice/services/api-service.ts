@@ -1,24 +1,38 @@
-import type { ApiResponse } from "@/types/api-response"
 import { AddressModel, type AddressRequest } from "../models/address-model"
 import { AuthModel, type LoginRequest } from "../models/auth-model"
 import { BookModel } from "../models/book-model"
 import { BrandModel } from "../models/brand-model"
 import { CardModel, type CardRequest } from "../models/card-model"
 import { type CartAddRequest, CartModel } from "../models/cart-model"
-import { CouponCreateRequest, CouponModel, type CouponValidateRequest } from "../models/coupon-model"
+import { CouponModel } from "../models/coupon-model"
 import { CustomerModel, type CustomerRequest, type CustomerUpdateRequest } from "../models/customer-model"
-import { DashboardModel, type DashboardData } from "../models/dashboard-model"
 import { OrderModel, type OrderRequest } from "../models/order-model"
-import type { ReturnExchangeModel, UpdateReturnExchangeStatusRequest } from "../models/return-exchange-model"
+import type { ReturnExchangeModel } from "../models/return-exchange-model"
+import type { DashboardData } from "../models/dashboard-model"
+import type { StockAddRequest, StockResponse, StockItem } from "../models/stock-request"
 
+// Admin-specific interfaces
 export interface AdminAuthRequest {
   email: string
   password: string
 }
 
-export interface AdminAuthData {
-  access_token: string
+export interface AdminAuthResponse {
+  data: {
+    access_token: string
+  }
+  error: boolean
+  message: string | null
 }
+
+export type {
+  DashboardData,
+  DashboardSummary,
+  SalesData,
+  RecentOrder,
+  CategoryOverview,
+  DashboardResponse,
+} from "../models/dashboard-model"
 
 export class ApiService {
   private baseUrl: string
@@ -39,6 +53,7 @@ export class ApiService {
   private async request<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
     }
 
     if (this.accessToken) {
@@ -50,135 +65,55 @@ export class ApiService {
       headers,
     }
 
-    if (body && method !== "GET") {
+    if (body) {
       options.body = JSON.stringify(body)
     }
 
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, options)
+    const response = await fetch(`${this.baseUrl}${endpoint}`, options)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: true,
-          message: `Request failed with status ${response.status}`,
-        }))
-        throw new Error(errorData.message || `API request failed with status ${response.status}`)
-      }
-
-      const responseData: ApiResponse<T> = await response.json()
-
-      if (responseData.error) {
-        throw new Error(responseData.message || "API returned an error")
-      }
-
-      return responseData.data
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error("An unexpected error occurred")
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `API request failed with status ${response.status}`)
     }
-  }
 
-  // ==================== ADMIN ENDPOINTS ====================
+    const responseData = await response.json()
+    return responseData.data || responseData
+  }
 
   // Admin Authentication
   async authenticateAdmin(email: string, password: string): Promise<string> {
     const request: AdminAuthRequest = { email, password }
-    const data = await this.request<AdminAuthData>("/admin/auth", "POST", request)
-    const token = data.access_token
+    const response = await this.request<{ access_token: string }>("/admin/auth", "POST", request)
+
+    const token = response.access_token
     this.setAccessToken(token)
     return token
   }
 
-  // Admin Dashboard
-  async getDashboardData(startDate?: string, endDate?: string): Promise<DashboardModel> {
+  async getDashboardData(startDate?: string, endDate?: string): Promise<DashboardData> {
     if (!this.accessToken) {
-      throw new Error("Authentication required")
+      throw new Error("No access token available")
     }
 
     let endpoint = "/admin/dashboard"
     const params = new URLSearchParams()
 
-    if (startDate) params.append("startDate", startDate)
-    if (endDate) params.append("endDate", endDate)
+    if (startDate) {
+      params.append("startDate", startDate)
+    }
+    if (endDate) {
+      params.append("endDate", endDate)
+    }
 
     if (params.toString()) {
       endpoint += `?${params.toString()}`
     }
 
-    const data = await this.request<DashboardData>(endpoint)
-    return DashboardModel.fromMap(data)
+    const response = await this.request<DashboardData>(endpoint)
+    return response
   }
 
-  // Admin Users
-  async getAllUsers(): Promise<CustomerModel[]> {
-    const data = await this.request<any[]>("/admin/users")
-    return data.map((item) => CustomerModel.fromMap(item))
-  }
-
-  // Admin Orders
-  async getAllOrders(): Promise<OrderModel[]> {
-    const data = await this.request<any[]>("/admin/orders")
-    return data.map((item) => OrderModel.fromMap(item))
-  }
-
-  async getOrderById(id: number): Promise<OrderModel> {
-    const data = await this.request<any>(`/admin/orders/${id}`)
-    return OrderModel.fromMap(data)
-  }
-
-  async updateOrderStatus(id: number, status: string): Promise<OrderModel> {
-    const data = await this.request<any>(`/admin/orders/${id}/status`, "PATCH", { status })
-    return OrderModel.fromMap(data)
-  }
-
-  // Admin Brands
-  async getAllBrands(): Promise<BrandModel[]> {
-    const data = await this.request<any[]>("/admin/brands")
-    return data.map((item) => BrandModel.fromMap(item))
-  }
-
-  async createBrand(name: string): Promise<BrandModel> {
-    const data = await this.request<any>("/admin/brands", "POST", { name })
-    return BrandModel.fromMap(data)
-  }
-
-  async deleteBrand(id: number): Promise<void> {
-    await this.request<void>(`/admin/brands/${id}`, "DELETE")
-  }
-
-  // Admin Coupons
-  async getAllCoupons(): Promise<CouponModel[]> {
-    const data = await this.request<any[]>("/admin/coupons")
-    return data.map((item) => CouponModel.fromMap(item))
-  }
-
-  async createCoupon(couponData: CouponCreateRequest): Promise<CouponModel> {
-    const data = await this.request<any>("/admin/coupons", "POST", couponData)
-    return CouponModel.fromMap(data)
-  }
-
-  async updateCouponStatus(id: number, status: string): Promise<CouponModel> {
-    const data = await this.request<any>(`/admin/coupons/${id}/status`, "PATCH", { status })
-    return CouponModel.fromMap(data)
-  }
-
-  // Admin Returns/Exchanges
-  async getAllReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
-    const data = await this.request<any[]>("/admin/returns")
-    return data
-  }
-
-  async updateReturnExchangeStatus(requestId: number, status: string): Promise<ReturnExchangeModel> {
-    const request: UpdateReturnExchangeStatusRequest = { status }
-    const data = await this.request<any>(`/admin/returns/${requestId}/status`, "PATCH", request)
-    return data
-  }
-
-  // ==================== CUSTOMER ENDPOINTS ====================
-
-  // Authentication
+  // Legacy Authentication (keeping for compatibility)
   async login(credentials: LoginRequest): Promise<AuthModel> {
     const data = await this.request<any>("/auth/login", "POST", credentials)
     const authModel = AuthModel.fromMap(data)
@@ -186,7 +121,7 @@ export class ApiService {
     return authModel
   }
 
-  // Customer Profile
+  // Customer
   async registerCustomer(customer: CustomerRequest): Promise<CustomerModel> {
     const data = await this.request<any>("/customers", "POST", customer)
     return CustomerModel.fromMap(data)
@@ -220,13 +155,17 @@ export class ApiService {
   }
 
   // Stock
-  async addStock(stockData: {
-    book_id: number
-    supplier: string
-    quantity: number
-    costs_value: number
-  }): Promise<any> {
-    return await this.request<any>("/stock", "POST", stockData)
+  async addStock(stockData: StockAddRequest): Promise<StockResponse> {
+    return await this.request<StockResponse>("/stock", "POST", stockData)
+  }
+
+  async getStockItems(): Promise<StockItem[]> {
+    const data = await this.request<StockItem[]>("/stock")
+    return data
+  }
+
+  async getStockItemById(id: number): Promise<StockItem> {
+    return await this.request<StockItem>(`/stock/${id}`)
   }
 
   // Cart
@@ -252,8 +191,22 @@ export class ApiService {
   }
 
   async getOrders(): Promise<OrderModel[]> {
-    const data = await this.request<any>("/order")
+    const data = await this.request<any[]>("/order")
     return data.map((item: any) => OrderModel.fromMap(item))
+  }
+
+  async getAllOrders(): Promise<any[]> {
+    const data = await this.request<any[]>("/admin/orders")
+    return data
+  }
+
+  async getOrderById(id: number): Promise<OrderModel> {
+    const data = await this.request<any>(`/admin/orders/${id}`)
+    return OrderModel.fromMap(data)
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<any> {
+    return await this.request<any>(`/order/${id}`, "PUT", { status })
   }
 
   // Addresses
@@ -291,29 +244,69 @@ export class ApiService {
     await this.request<any>(`/card/${id}`, "DELETE")
   }
 
-  // Brands (Customer)
+  // Brands
   async getBrands(): Promise<BrandModel[]> {
-    const data = await this.request<any[]>("/brand")
+    const data = await this.request<any[]>("/admin/brands")
     return data.map((item) => BrandModel.fromMap(item))
   }
 
-  // Coupons (Customer)
-  async validateCoupon(request: CouponValidateRequest): Promise<CouponModel> {
-    const data = await this.request<any>("/coupon/validate", "POST", request)
+  async createBrand(request: { name: string }): Promise<BrandModel> {
+    const data = await this.request<any>("/admin/brands", "POST", request)
+    return BrandModel.fromMap(data)
+  }
+
+  async deleteBrand(id: number): Promise<void> {
+    await this.request<any>(`/admin/brands/${id}`, "DELETE")
+  }
+
+  // Coupons
+  async getCoupons(): Promise<CouponModel[]> {
+    const data = await this.request<any[]>("/admin/coupons")
+    return data.map((item) => CouponModel.fromMap(item))
+  }
+
+  async createCoupon(request: {
+    code: string
+    discount: number
+    type: string
+    status: string
+    expiryDate: string
+  }): Promise<CouponModel> {
+    const data = await this.request<any>("/admin/coupons", "POST", request)
     return CouponModel.fromMap(data)
   }
 
-  // Return/Exchange Requests (Customer)
+  async toggleCouponStatus(id: number, status: string): Promise<CouponModel> {
+    const data = await this.request<any>(`/admin/coupons/${id}/status`, "PATCH", { status })
+    return CouponModel.fromMap(data)
+  }
+
+  // Return/Exchange methods
   async getMyReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
     const data = await this.request<any[]>("/return-exchange-requests/my-requests")
     return data
   }
 
-  async createReturnExchangeRequest(requestData: {
+  async getAllReturnExchangeRequests(): Promise<ReturnExchangeModel[]> {
+    const data = await this.request<any[]>("/admin/returns")
+    return data
+  }
+
+  async createReturnExchangeRequest(data: {
     description: string
     order_item_ids: number[]
     type: "exchange" | "return"
   }): Promise<any> {
-    return await this.request<any>("/return-exchange-requests", "POST", requestData)
+    return await this.request<any>("/return-exchange-requests", "POST", data)
+  }
+
+  async updateReturnExchangeStatus(requestId: number, status: string): Promise<any> {
+    return await this.request<any>(`/admin/returns/${requestId}/status`, "PATCH", { status })
+  }
+
+  // Admin-specific methods
+  async getAllUsers(): Promise<any[]> {
+    const data = await this.request<any[]>("/admin/users")
+    return data
   }
 }

@@ -1,5 +1,4 @@
-import { CouponCreateRequest } from "."
-import type { CouponModel, CouponValidateRequest } from "../models/coupon-model"
+import type { CouponModel, CouponValidateRequest, CouponCreateRequest } from "../models/coupon-model"
 import type { ApiService } from "./api-service"
 
 export class CouponService {
@@ -9,19 +8,15 @@ export class CouponService {
     this.apiService = apiService
   }
 
-  async validateCoupon(request: CouponValidateRequest): Promise<CouponModel> {
-    return this.apiService.validateCoupon(request)
+  async getCoupons(): Promise<CouponModel[]> {
+    return this.apiService.getCoupons()
   }
 
-  async getAllCoupons(): Promise<CouponModel[]> {
-    return this.apiService.getAllCoupons()
+  async createCoupon(request: CouponCreateRequest): Promise<CouponModel> {
+    return this.apiService.createCoupon(request)
   }
 
-  async createCoupon(couponData: CouponCreateRequest): Promise<CouponModel> {
-    return this.apiService.createCoupon(couponData)
-  }
-
-  async updateCouponStatus(id: number, status: string): Promise<CouponModel> {
-    return this.apiService.updateCouponStatus(id, status)
+  async toggleStatus(id: number, status: string): Promise<CouponModel> {
+    return this.apiService.toggleCouponStatus(id, status)
   }
 }

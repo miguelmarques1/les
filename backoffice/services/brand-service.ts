@@ -1,4 +1,4 @@
-import { BrandModel } from "@/models/brand-model"
+import type { BrandModel, BrandCreateRequest } from "../models/brand-model"
 import type { ApiService } from "./api-service"
 
 export class BrandService {
@@ -9,11 +9,11 @@ export class BrandService {
   }
 
   async getBrands(): Promise<BrandModel[]> {
-    return this.apiService.getAllBrands()
+    return this.apiService.getBrands()
   }
 
-  async createBrand(name: string): Promise<BrandModel> {
-    return this.apiService.createBrand(name)
+  async createBrand(request: BrandCreateRequest): Promise<BrandModel> {
+    return this.apiService.createBrand(request)
   }
 
   async deleteBrand(id: number): Promise<void> {

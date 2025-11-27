@@ -1,13 +1,5 @@
 import { CouponType } from "../enums/coupon-type"
 
-export interface CouponCreateRequest {
-  code: string
-  discount: number
-  type: "PERCENTAGE" | "VALUE"
-  status: "AVAILABLE" | "USED" | "EXPIRED"
-  expiryDate: string
-}
-
 export class CouponModel {
   id: number
   code: string
@@ -98,4 +90,16 @@ export class CouponModel {
 
 export interface CouponValidateRequest {
   code: string
+}
+
+export interface CouponCreateRequest {
+  code: string
+  discount: number
+  type: "PERCENTAGE" | "VALUE"
+  status: "AVAILABLE" | "DISABLED"
+  expiryDate: string
+}
+
+export interface CouponStatusUpdateRequest {
+  status: "AVAILABLE" | "DISABLED"
 }

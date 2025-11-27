@@ -7,34 +7,30 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft } from "lucide-react"
 import { OrderStatus } from "@/enums/order-status"
 import Link from "next/link"
-import { services } from "@/services"
-import { useToast } from "@/hooks/use-toast"
+import { orderService } from "@/services"
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
   const orderId = Number.parseInt(params.id)
-  const [order, setOrder] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
 
-  const fetchOrderDetails = async () => {
-    try {
-      setLoading(true)
-      const data = await services.order.getOrderById(orderId)
-      setOrder(data)
-    } catch (error) {
-      console.error("Failed to fetch order details:", error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os detalhes do pedido.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [order, setOrder] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchOrderDetails()
+    const fetchOrder = async () => {
+      try {
+        setLoading(true)
+        const data = await orderService.getOrderById(orderId)
+        setOrder(data)
+      } catch (err) {
+        console.error("[v0] Error fetching order:", err)
+        setError("Falha ao carregar detalhes do pedido")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrder()
   }, [orderId])
 
   const getStatusColor = (status: OrderStatus) => {
@@ -56,7 +52,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     }
   }
 
-  const formatStatus = (status: string) => {
+  const formatStatus = (status: OrderStatus) => {
     return status.charAt(0) + status.slice(1).toLowerCase().replace("_", " ")
   }
 
@@ -69,16 +65,13 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Order #{orderId}</h1>
-            <p className="text-muted-foreground">Carregando...</p>
-          </div>
+          <h1 className="text-3xl font-bold">Carregando pedido...</h1>
         </div>
       </div>
     )
   }
 
-  if (!order) {
+  if (error || !order) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-4">
@@ -87,9 +80,10 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Pedido não encontrado</h1>
-          </div>
+          <h1 className="text-3xl font-bold">Erro</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-800">{error}</p>
         </div>
       </div>
     )
@@ -106,7 +100,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         <div>
           <h1 className="text-3xl font-bold">Order #{order.id}</h1>
           <p className="text-muted-foreground">
-            Status: <Badge className={getStatusColor(order.status as OrderStatus)}>{formatStatus(order.status)}</Badge>
+            Placed on {order.date || new Date(order.createdAt).toLocaleDateString()}
           </p>
         </div>
       </div>
@@ -124,82 +118,149 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                   <tr className="border-b">
                     <th className="text-left pb-2 font-medium">Product</th>
                     <th className="text-right pb-2 font-medium">Price</th>
-                    <th className="text-right pb-2 font-medium">Status</th>
+                    <th className="text-right pb-2 font-medium">Quantity</th>
+                    <th className="text-right pb-2 font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items?.map((item: any) => (
-                    <tr key={item.id} className="border-b">
+                  {order.items?.map((item: any, index: number) => (
+                    <tr key={item.id || index} className="border-b">
                       <td className="py-4">
                         <div>
-                          <div className="font-medium">{item.book_details?.title || "N/A"}</div>
-                          <div className="text-sm text-muted-foreground">{item.book_details?.author || "N/A"}</div>
+                          <div className="font-medium">{item.book_details?.title || item.title}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {item.book_details?.author || item.author}
+                          </div>
                         </div>
                       </td>
-                      <td className="py-4 text-right">R$ {item.unit_price?.toFixed(2) || "0.00"}</td>
+                      <td className="py-4 text-right">${(item.unit_price || item.price || 0).toFixed(2)}</td>
+                      <td className="py-4 text-right">{item.quantity || 1}</td>
                       <td className="py-4 text-right">
-                        <Badge variant="outline">{item.status}</Badge>
+                        ${((item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={2} className="pt-4 text-right font-bold">
+                    <td colSpan={3} className="pt-4 text-right font-medium">
+                      Subtotal
+                    </td>
+                    <td className="pt-4 text-right">
+                      ${(order.subtotal || order.transaction?.amount || 0).toFixed(2)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="pt-4 text-right font-bold">
                       Total
                     </td>
-                    <td className="pt-4 text-right font-bold">R$ {order.transaction?.amount?.toFixed(2) || "0.00"}</td>
+                    <td className="pt-4 text-right font-bold">
+                      ${(order.total || order.transaction?.amount || 0).toFixed(2)}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
             </CardContent>
           </Card>
+
+          {order.timeline && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Timeline</CardTitle>
+                <CardDescription>Status history of this order</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative border-l-2 border-muted pl-6 pb-2">
+                  {order.timeline.map((event: any, index: number) => (
+                    <div key={index} className="mb-8 relative">
+                      <div className="absolute -left-[29px] h-6 w-6 rounded-full bg-background border-2 border-muted flex items-center justify-center">
+                        <div className={`h-3 w-3 rounded-full ${getStatusColor(event.status).split(" ")[0]}`} />
+                      </div>
+                      <div>
+                        <Badge className={getStatusColor(event.status)}>{formatStatus(event.status)}</Badge>
+                        <p className="text-sm text-muted-foreground mt-1">{event.date}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Shipping Address</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <p>
-                  {order.address?.street || "N/A"}, {order.address?.number || ""}
-                </p>
-                <p>{order.address?.district || ""}</p>
-                <p>
-                  {order.address?.city || ""}, {order.address?.state || ""} {order.address?.zip_code || ""}
-                </p>
-                <p>{order.address?.country || ""}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
+              <CardTitle>Customer Information</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                  <p>R$ {order.transaction?.amount?.toFixed(2) || "0.00"}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Name</p>
+                  <p>{order.customer?.name || order.address?.alias || "N/A"}</p>
                 </div>
-                {order.transaction?.card && (
+                {order.customer?.email && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Card</p>
-                    <p>**** {order.transaction.card.number?.slice(-4) || "****"}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Email</p>
+                    <p>{order.customer.email}</p>
                   </div>
                 )}
-                {order.transaction?.coupon && (
+                {order.customer?.phone && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Coupon</p>
-                    <p>{order.transaction.coupon.code}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                    <p>{order.customer.phone}</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
+
+          {order.address && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Shipping Address</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  <p>{order.address.alias}</p>
+                  <p>
+                    {order.address.street}, {order.address.number}
+                  </p>
+                  <p>{order.address.district}</p>
+                  <p>
+                    {order.address.city}, {order.address.state} {order.address.zip_code}
+                  </p>
+                  <p>{order.address.country}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {order.transaction && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                    <p>Credit Card</p>
+                  </div>
+                  {order.transaction.card && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Card Details</p>
+                      <p>Ending in {order.transaction.card.number?.slice(-4)}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                    <p>${order.transaction.amount?.toFixed(2)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
@@ -209,10 +270,11 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Current Status</p>
-                  <Badge className={`mt-1 ${getStatusColor(order.status as OrderStatus)}`}>
-                    {formatStatus(order.status)}
-                  </Badge>
+                  <Badge className={`mt-1 ${getStatusColor(order.status)}`}>{formatStatus(order.status)}</Badge>
                 </div>
+                <Link href="/dashboard/orders">
+                  <Button className="w-full">Atualizar Status</Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

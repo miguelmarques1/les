@@ -9,6 +9,8 @@ import { BrandService } from "./brand-service"
 import { CardService } from "./card-service"
 import { ReturnExchangeService } from "./return-exchange-service"
 import { OrderService } from "./order-service"
+import { DashboardService } from "./dashboard-service"
+import { StockService } from "./stock-service"
 
 // Create single instances to be shared across the app
 export const apiService = new ApiService()
@@ -22,6 +24,8 @@ export const brandService = new BrandService(apiService)
 export const cardService = new CardService(apiService)
 export const returnExchangeService = new ReturnExchangeService(apiService)
 export const orderService = new OrderService(apiService)
+export const dashboardService = new DashboardService(apiService)
+export const stockService = new StockService(apiService)
 
 // Export services object for easier imports
 export const services = {
@@ -35,22 +39,12 @@ export const services = {
   brandService,
   cardService,
   returnExchangeService,
-  order: orderService,
+  orderService,
+  dashboardService,
+  stockService,
 }
 
-// Export model types
-export type {
-  DashboardData,
-  DashboardSummary,
-  SalesDataItem,
-  CategoryOverviewItem,
-  RecentOrderItem,
-} from "../models/dashboard-model"
-export type { UserData } from "../models/user-model"
-export type { CouponModel, CouponCreateRequest } from "../models/coupon-model"
-export type { BrandModel, BrandCreateRequest } from "../models/brand-model"
-export type { ReturnExchangeModel } from "../models/return-exchange-model"
-export type { AdminAuthRequest } from "../models/admin-auth-model"
-export type { ApiResponse } from "../types/api-response"
+// Export types
+export type { DashboardData, SalesData, CategoryOverview, RecentOrder } from "./api-service"
 export type { User, AuthState } from "./auth-service"
-export type { StockBookModel } from "../models/stock-book-model"
+export type { StockAddRequest, StockResponse, StockItem } from "../models/stock-request"

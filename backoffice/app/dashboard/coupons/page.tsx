@@ -35,7 +35,7 @@ export default function CouponsPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true)
-      const data = await services.couponService.getAllCoupons()
+      const data = await services.couponService.getCoupons()
       setCoupons(data)
     } catch (error) {
       console.error("Failed to fetch coupons:", error)
@@ -86,7 +86,7 @@ export default function CouponsPage() {
   const toggleCouponStatus = async (id: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === "AVAILABLE" ? "DISABLED" : "AVAILABLE"
-      await services.couponService.updateCouponStatus(id, newStatus)
+      await services.couponService.toggleStatus(id, newStatus)
 
       toast({
         title: "Sucesso",

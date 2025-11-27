@@ -5,54 +5,98 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { StockOverview } from "@/components/dashboard/stock-overview"
 import { RecentOrders } from "@/components/dashboard/recent-orders"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { apiService } from "@/services"
-import type { DashboardData } from "@/services/api-service"
-import { useToast } from "@/hooks/use-toast"
+import {
+  DashboardFilters,
+  type DashboardFilters as DashboardFiltersType,
+} from "@/components/dashboard/dashboard-filters"
+import { dashboardService } from "@/services"
+import type { DashboardData } from "@/models/dashboard-model"
+
+const defaultFilters: DashboardFiltersType = {
+  dateRange: {
+    from: undefined,
+    to: undefined,
+  },
+  orderStatus: [],
+  categories: [],
+  period: "30d",
+}
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [filteredData, setFilteredData] = useState<DashboardData | null>(null)
+  const [filters, setFilters] = useState<DashboardFiltersType>(defaultFilters)
   const [loading, setLoading] = useState(true)
+  const [applyingFilters, setApplyingFilters] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-  const { toast } = useToast()
 
-  const fetchDashboardData = async (start?: Date, end?: Date) => {
+  const fetchDashboardData = async (appliedFilters?: DashboardFiltersType) => {
     try {
       setLoading(true)
-      const startDateStr = start ? format(start, "yyyy-MM-dd") : undefined
-      const endDateStr = end ? format(end, "yyyy-MM-dd") : undefined
 
-      const data = await apiService.getDashboardData(startDateStr, endDateStr)
+      // Convert date range to API format (YYYY-MM-DD)
+      const currentFilters = appliedFilters || filters
+      let startDate: string | undefined
+      let endDate: string | undefined
+
+      if (currentFilters.dateRange?.from) {
+        startDate = currentFilters.dateRange.from.toISOString().split("T")[0]
+      }
+      if (currentFilters.dateRange?.to) {
+        endDate = currentFilters.dateRange.to.toISOString().split("T")[0]
+      }
+
+      const data = await dashboardService.getDashboardData({ startDate, endDate })
       setDashboardData(data)
+
+      const filtered = applyLocalFilters(data, currentFilters)
+      setFilteredData(filtered)
       setError(null)
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err)
-      setError("Falha ao carregar dados do dashboard.")
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados do dashboard.",
-        variant: "destructive",
-      })
+      setError("Falha ao carregar dados do dashboard. Por favor, tente novamente.")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleApplyFilters = () => {
-    fetchDashboardData(startDate, endDate)
+  const applyLocalFilters = (data: DashboardData, appliedFilters: DashboardFiltersType): DashboardData => {
+    const filtered = { ...data }
+
+    // Filter recent orders by status
+    if (appliedFilters.orderStatus.length > 0) {
+      filtered.recentOrders = data.recentOrders.filter((order) => appliedFilters.orderStatus.includes(order.status))
+    }
+
+    // Filter categories
+    if (appliedFilters.categories.length > 0) {
+      filtered.categoryOverview = data.categoryOverview.filter((category) =>
+        appliedFilters.categories.includes(category.categoryName),
+      )
+    }
+
+    return filtered
+  }
+
+  const handleFiltersChange = (newFilters: DashboardFiltersType) => {
+    setFilters(newFilters)
+  }
+
+  const handleApplyFilters = async () => {
+    setApplyingFilters(true)
+    try {
+      await fetchDashboardData(filters)
+    } finally {
+      setApplyingFilters(false)
+    }
   }
 
   const handleClearFilters = () => {
-    setStartDate(undefined)
-    setEndDate(undefined)
-    fetchDashboardData()
+    setFilters(defaultFilters)
+    if (dashboardData) {
+      const filtered = applyLocalFilters(dashboardData, defaultFilters)
+      setFilteredData(filtered)
+    }
   }
 
   useEffect(() => {
@@ -83,14 +127,14 @@ export default function Dashboard() {
     )
   }
 
-  if (error || !dashboardData) {
+  if (error || !filteredData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800 text-sm">{error || "Erro ao carregar dados"}</p>
+          <p className="text-red-800">{error || "Erro ao carregar dados."}</p>
         </div>
       </div>
     )
@@ -102,56 +146,14 @@ export default function Dashboard() {
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros de Período</CardTitle>
-          <CardDescription>Selecione um período para visualizar os dados</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium">Data Início</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yyyy") : "Selecione a data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium">Data Fim</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "dd/MM/yyyy") : "Selecione a data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleApplyFilters}>Aplicar Filtros</Button>
-              <Button onClick={handleClearFilters} variant="outline">
-                Limpar
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros */}
+      <DashboardFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        isLoading={applyingFilters}
+      />
 
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -172,7 +174,7 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.summary.formattedTotalSales}</div>
+              <div className="text-2xl font-bold">{filteredData.summary.formattedTotalSales}</div>
               <p className="text-xs text-muted-foreground">Total de vendas no período</p>
             </CardContent>
           </Card>
@@ -195,7 +197,7 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.summary.totalOrders}</div>
+              <div className="text-2xl font-bold">{filteredData.summary.totalOrders}</div>
               <p className="text-xs text-muted-foreground">Total de pedidos no período</p>
             </CardContent>
           </Card>
@@ -217,7 +219,7 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.summary.formattedAverageOrderValue}</div>
+              <div className="text-2xl font-bold">{filteredData.summary.formattedAverageOrderValue}</div>
               <p className="text-xs text-muted-foreground">Valor médio por pedido</p>
             </CardContent>
           </Card>
@@ -238,9 +240,9 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.summary.inventoryCount}</div>
+              <div className="text-2xl font-bold">{filteredData.summary.inventoryCount}</div>
               <p className="text-xs text-muted-foreground">
-                {dashboardData.summary.lowStockItems} itens com estoque baixo
+                {filteredData.summary.lowStockItems} itens com estoque baixo
               </p>
             </CardContent>
           </Card>
@@ -249,10 +251,9 @@ export default function Dashboard() {
           <Card className="col-span-4">
             <CardHeader>
               <CardTitle>Vendas</CardTitle>
-              <CardDescription>Vendas por mês no período selecionado</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              <SalesChart data={dashboardData.salesData} />
+              <SalesChart data={filteredData.salesData} />
             </CardContent>
           </Card>
           <Card className="col-span-3">
@@ -261,7 +262,7 @@ export default function Dashboard() {
               <CardDescription>Distribuição do estoque por categoria</CardDescription>
             </CardHeader>
             <CardContent>
-              <StockOverview data={dashboardData.categoryOverview} />
+              <StockOverview data={filteredData.categoryOverview} />
             </CardContent>
           </Card>
         </div>
@@ -269,10 +270,17 @@ export default function Dashboard() {
           <Card className="col-span-7">
             <CardHeader>
               <CardTitle>Pedidos Recentes</CardTitle>
-              <CardDescription>Últimos pedidos realizados na plataforma</CardDescription>
+              <CardDescription>
+                Últimos pedidos realizados na plataforma
+                {dashboardData && filteredData.recentOrders.length !== dashboardData.recentOrders.length && (
+                  <span className="ml-2 text-sm text-blue-600">
+                    ({filteredData.recentOrders.length} de {dashboardData.recentOrders.length} pedidos)
+                  </span>
+                )}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <RecentOrders orders={dashboardData.recentOrders} />
+              <RecentOrders orders={filteredData.recentOrders} />
             </CardContent>
           </Card>
         </div>
