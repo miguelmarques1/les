@@ -138,7 +138,7 @@ export class ApiService {
 
   // Books
   async getAllBooks(): Promise<BookModel[]> {
-    const data = await this.request<any[]>("/book")
+    const data = await this.request<any[]>("/book", "GET")
     return data.map((item) => BookModel.fromMap(item))
   }
 
@@ -276,7 +276,7 @@ export class ApiService {
   }
 
   async toggleCouponStatus(id: number, status: string): Promise<CouponModel> {
-    const data = await this.request<any>(`/admin/coupons/${id}/status`, "PATCH", { status })
+    const data = await this.request<any>(`/admin/coupons/${id}/status`, "PUT", { status })
     return CouponModel.fromMap(data)
   }
 
@@ -300,7 +300,7 @@ export class ApiService {
   }
 
   async updateReturnExchangeStatus(requestId: number, status: string): Promise<any> {
-    return await this.request<any>(`/admin/returns/${requestId}/status`, "PATCH", { status })
+    return await this.request<any>(`/admin/returns/${requestId}/status`, "PUT", { status })
   }
 
   // Admin-specific methods

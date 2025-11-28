@@ -33,11 +33,6 @@ export default function Sidebar() {
       icon: <BookOpen className="h-5 w-5" />,
     },
     {
-      name: "Estoque",
-      path: "/dashboard/stock",
-      icon: <Package className="h-5 w-5" />,
-    },
-    {
       name: "Pedidos",
       path: "/dashboard/orders",
       icon: <ShoppingCart className="h-5 w-5" />,

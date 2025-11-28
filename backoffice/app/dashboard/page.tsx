@@ -5,52 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { StockOverview } from "@/components/dashboard/stock-overview"
 import { RecentOrders } from "@/components/dashboard/recent-orders"
-import {
-  DashboardFilters,
-  type DashboardFilters as DashboardFiltersType,
-} from "@/components/dashboard/dashboard-filters"
+import { DateRangeFilter, type DateRange } from "@/components/dashboard/date-range-filter"
 import { dashboardService } from "@/services"
 import type { DashboardData } from "@/models/dashboard-model"
 
-const defaultFilters: DashboardFiltersType = {
-  dateRange: {
-    from: undefined,
-    to: undefined,
-  },
-  orderStatus: [],
-  categories: [],
-  period: "30d",
+const defaultDateRange: DateRange = {
+  from: undefined,
+  to: undefined,
 }
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [filteredData, setFilteredData] = useState<DashboardData | null>(null)
-  const [filters, setFilters] = useState<DashboardFiltersType>(defaultFilters)
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange)
   const [loading, setLoading] = useState(true)
-  const [applyingFilters, setApplyingFilters] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchDashboardData = async (appliedFilters?: DashboardFiltersType) => {
+  const fetchDashboardData = async (from?: Date, to?: Date) => {
     try {
       setLoading(true)
 
-      // Convert date range to API format (YYYY-MM-DD)
-      const currentFilters = appliedFilters || filters
-      let startDate: string | undefined
-      let endDate: string | undefined
-
-      if (currentFilters.dateRange?.from) {
-        startDate = currentFilters.dateRange.from.toISOString().split("T")[0]
-      }
-      if (currentFilters.dateRange?.to) {
-        endDate = currentFilters.dateRange.to.toISOString().split("T")[0]
-      }
+      const startDate = from ? from.toISOString().split("T")[0] : undefined
+      const endDate = to ? to.toISOString().split("T")[0] : undefined
 
       const data = await dashboardService.getDashboardData({ startDate, endDate })
       setDashboardData(data)
-
-      const filtered = applyLocalFilters(data, currentFilters)
-      setFilteredData(filtered)
       setError(null)
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err)
@@ -60,43 +38,8 @@ export default function Dashboard() {
     }
   }
 
-  const applyLocalFilters = (data: DashboardData, appliedFilters: DashboardFiltersType): DashboardData => {
-    const filtered = { ...data }
-
-    // Filter recent orders by status
-    if (appliedFilters.orderStatus.length > 0) {
-      filtered.recentOrders = data.recentOrders.filter((order) => appliedFilters.orderStatus.includes(order.status))
-    }
-
-    // Filter categories
-    if (appliedFilters.categories.length > 0) {
-      filtered.categoryOverview = data.categoryOverview.filter((category) =>
-        appliedFilters.categories.includes(category.categoryName),
-      )
-    }
-
-    return filtered
-  }
-
-  const handleFiltersChange = (newFilters: DashboardFiltersType) => {
-    setFilters(newFilters)
-  }
-
-  const handleApplyFilters = async () => {
-    setApplyingFilters(true)
-    try {
-      await fetchDashboardData(filters)
-    } finally {
-      setApplyingFilters(false)
-    }
-  }
-
-  const handleClearFilters = () => {
-    setFilters(defaultFilters)
-    if (dashboardData) {
-      const filtered = applyLocalFilters(dashboardData, defaultFilters)
-      setFilteredData(filtered)
-    }
+  const handleApplyFilter = () => {
+    fetchDashboardData(dateRange.from, dateRange.to)
   }
 
   useEffect(() => {
@@ -127,7 +70,7 @@ export default function Dashboard() {
     )
   }
 
-  if (error || !filteredData) {
+  if (error || !dashboardData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
@@ -145,15 +88,6 @@ export default function Dashboard() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
-
-      {/* Filtros */}
-      <DashboardFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onApplyFilters={handleApplyFilters}
-        onClearFilters={handleClearFilters}
-        isLoading={applyingFilters}
-      />
 
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -174,7 +108,7 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.formattedTotalSales}</div>
+              <div className="text-2xl font-bold">{dashboardData.summary.formattedTotalSales}</div>
               <p className="text-xs text-muted-foreground">Total de vendas no período</p>
             </CardContent>
           </Card>
@@ -191,13 +125,13 @@ export default function Dashboard() {
                 strokeWidth="2"
                 className="h-4 w-4 text-muted-foreground"
               >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <path d="M16 21v2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="m22 21-3-3m0 0a5.5 5.5 0 1 0-7.78-7.78 5.5 5.5 0 0 0 7.78 7.78Z" />
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.totalOrders}</div>
+              <div className="text-2xl font-bold">{dashboardData.summary.totalOrders}</div>
               <p className="text-xs text-muted-foreground">Total de pedidos no período</p>
             </CardContent>
           </Card>
@@ -219,7 +153,7 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.formattedAverageOrderValue}</div>
+              <div className="text-2xl font-bold">{dashboardData.summary.formattedAverageOrderValue}</div>
               <p className="text-xs text-muted-foreground">Valor médio por pedido</p>
             </CardContent>
           </Card>
@@ -240,9 +174,9 @@ export default function Dashboard() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredData.summary.inventoryCount}</div>
+              <div className="text-2xl font-bold">{dashboardData.summary.inventoryCount}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredData.summary.lowStockItems} itens com estoque baixo
+                {dashboardData.summary.lowStockItems} itens com estoque baixo
               </p>
             </CardContent>
           </Card>
@@ -253,7 +187,7 @@ export default function Dashboard() {
               <CardTitle>Vendas</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
-              <SalesChart data={filteredData.salesData} />
+              <SalesChart data={dashboardData.salesData} />
             </CardContent>
           </Card>
           <Card className="col-span-3">
@@ -262,25 +196,21 @@ export default function Dashboard() {
               <CardDescription>Distribuição do estoque por categoria</CardDescription>
             </CardHeader>
             <CardContent>
-              <StockOverview data={filteredData.categoryOverview} />
+              <StockOverview data={dashboardData.categoryOverview} />
             </CardContent>
           </Card>
         </div>
+
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} onApply={handleApplyFilter} />
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-7">
             <CardHeader>
               <CardTitle>Pedidos Recentes</CardTitle>
-              <CardDescription>
-                Últimos pedidos realizados na plataforma
-                {dashboardData && filteredData.recentOrders.length !== dashboardData.recentOrders.length && (
-                  <span className="ml-2 text-sm text-blue-600">
-                    ({filteredData.recentOrders.length} de {dashboardData.recentOrders.length} pedidos)
-                  </span>
-                )}
-              </CardDescription>
+              <CardDescription>Últimos pedidos realizados na plataforma</CardDescription>
             </CardHeader>
             <CardContent>
-              <RecentOrders orders={filteredData.recentOrders} />
+              <RecentOrders orders={dashboardData.recentOrders} />
             </CardContent>
           </Card>
         </div>

@@ -19,29 +19,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Plus, Search } from "lucide-react"
 import { CouponType } from "@/enums/coupon-type"
-import { services } from "@/services"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/hooks/use-toast"
+import { couponService } from "@/services"
+import type { CouponModel } from "@/models/coupon-model"
 
 export default function CouponsPage() {
   const [openDialog, setOpenDialog] = useState(false)
   const [couponType, setCouponType] = useState<CouponType>(CouponType.PERCENTAGE)
-  const [coupons, setCoupons] = useState<any[]>([])
+  const [coupons, setCoupons] = useState<CouponModel[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const { toast } = useToast()
 
   const fetchCoupons = async () => {
     try {
       setLoading(true)
-      const data = await services.couponService.getCoupons()
+      console.log("[v0] Fetching coupons from API")
+      const data = await couponService.getCoupons()
+      console.log("[v0] Coupons received:", data)
       setCoupons(data)
     } catch (error) {
-      console.error("Failed to fetch coupons:", error)
+      console.error("[v0] Error fetching coupons:", error)
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os cupons.",
+        description: "Falha ao carregar cupons",
         variant: "destructive",
       })
     } finally {
@@ -55,29 +57,32 @@ export default function CouponsPage() {
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
 
     try {
-      await services.couponService.createCoupon({
+      const formData = new FormData(e.target as HTMLFormElement)
+      const couponData = {
         code: formData.get("code") as string,
-        discount: Number(formData.get("discount")),
         type: couponType,
-        status: formData.get("active") === "on" ? "AVAILABLE" : "DISABLED",
+        discount: Number.parseFloat(formData.get("discount") as string),
         expiryDate: formData.get("expiry_date") as string,
-      })
+        status: (formData.get("active") as string) === "on" ? "AVAILABLE" : "EXPIRED",
+      }
+
+      console.log("[v0] Creating coupon:", couponData)
+      await couponService.createCoupon(couponData)
 
       toast({
-        title: "Sucesso",
-        description: "Cupom criado com sucesso!",
+        title: "Cupom criado",
+        description: "O cupom foi criado com sucesso.",
       })
 
       setOpenDialog(false)
       fetchCoupons()
     } catch (error) {
-      console.error("Failed to create coupon:", error)
+      console.error("[v0] Error creating coupon:", error)
       toast({
         title: "Erro",
-        description: "Não foi possível criar o cupom.",
+        description: "Falha ao criar cupom",
         variant: "destructive",
       })
     }
@@ -85,46 +90,42 @@ export default function CouponsPage() {
 
   const toggleCouponStatus = async (id: number, currentStatus: string) => {
     try {
-      const newStatus = currentStatus === "AVAILABLE" ? "DISABLED" : "AVAILABLE"
-      await services.couponService.toggleStatus(id, newStatus)
+      const newStatus = currentStatus === "AVAILABLE" ? "EXPIRED" : "AVAILABLE"
+      console.log("[v0] Toggling coupon status:", id, newStatus)
+      await couponService.toggleStatus(id, newStatus)
+
+      setCoupons(coupons.map((c) => (c.id === id ? { ...c, status: newStatus } : c)))
 
       toast({
-        title: "Sucesso",
-        description: "Status do cupom atualizado!",
+        title: "Status atualizado",
+        description: `Cupom ${newStatus === "AVAILABLE" ? "ativado" : "desativado"} com sucesso.`,
       })
-
-      fetchCoupons()
     } catch (error) {
-      console.error("Failed to update coupon status:", error)
+      console.error("[v0] Error toggling coupon status:", error)
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status do cupom.",
+        description: "Falha ao atualizar status do cupom",
         variant: "destructive",
       })
     }
   }
 
   const filteredCoupons = coupons.filter((coupon) => {
-    const matchesSearch = coupon.code.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === "all" || coupon.type === typeFilter.toUpperCase()
+    const matchesSearch = searchQuery === "" || coupon.code?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "percentage" && coupon.type === CouponType.PERCENTAGE) ||
+      (typeFilter === "value" && coupon.type === CouponType.VALUE)
+
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "active" && coupon.status === "AVAILABLE") ||
-      (statusFilter === "inactive" && coupon.status !== "AVAILABLE")
+      (statusFilter === "available" && coupon.status === "AVAILABLE") ||
+      (statusFilter === "expired" && coupon.status === "EXPIRED") ||
+      (statusFilter === "used" && coupon.status === "USED")
 
     return matchesSearch && matchesType && matchesStatus
   })
-
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Coupons</h1>
-        </div>
-        <p>Carregando cupons...</p>
-      </div>
-    )
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -162,51 +163,62 @@ export default function CouponsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="available">AVAILABLE</SelectItem>
+            <SelectItem value="expired">EXPIRED</SelectItem>
+            <SelectItem value="used">USED</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-4 font-medium">ID</th>
-                <th className="text-left p-4 font-medium">Code</th>
-                <th className="text-left p-4 font-medium">Type</th>
-                <th className="text-left p-4 font-medium">Discount</th>
-                <th className="text-left p-4 font-medium">Expiry Date</th>
-                <th className="text-left p-4 font-medium">Status</th>
-                <th className="text-left p-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCoupons.map((coupon) => (
-                <tr key={coupon.id} className="border-b hover:bg-muted/50">
-                  <td className="p-4">{coupon.id}</td>
-                  <td className="p-4 font-medium">{coupon.code}</td>
-                  <td className="p-4">{coupon.type === "PERCENTAGE" ? "Percentage" : "Fixed Value"}</td>
-                  <td className="p-4">
-                    {coupon.type === "PERCENTAGE" ? `${coupon.discount}%` : `R$ ${coupon.discount.toFixed(2)}`}
-                  </td>
-                  <td className="p-4">{coupon.expiryDate}</td>
-                  <td className="p-4">
-                    <Switch
-                      checked={coupon.status === "AVAILABLE"}
-                      onCheckedChange={() => toggleCouponStatus(coupon.id, coupon.status)}
-                    />
-                  </td>
-                  <td className="p-4">
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                  </td>
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Carregando cupons...</div>
+          ) : filteredCoupons.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">Nenhum cupom encontrado</div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-4 font-medium">ID</th>
+                  <th className="text-left p-4 font-medium">Code</th>
+                  <th className="text-left p-4 font-medium">Type</th>
+                  <th className="text-left p-4 font-medium">Discount</th>
+                  <th className="text-left p-4 font-medium">Expiry Date</th>
+                  <th className="text-left p-4 font-medium">Status</th>
+                  <th className="text-left p-4 font-medium">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredCoupons.map((coupon) => (
+                  <tr key={coupon.id} className="border-b hover:bg-muted/50">
+                    <td className="p-4">{coupon.id}</td>
+                    <td className="p-4 font-medium">{coupon.code}</td>
+                    <td className="p-4">{coupon.type === CouponType.PERCENTAGE ? "Percentage" : "Fixed Value"}</td>
+                    <td className="p-4">
+                      {coupon.type === CouponType.PERCENTAGE ? `${coupon.discount}%` : `$${coupon.discount.toFixed(2)}`}
+                    </td>
+                    <td className="p-4">
+                      {coupon.expiryDate instanceof Date
+                        ? coupon.expiryDate.toLocaleDateString("pt-BR")
+                        : new Date(coupon.expiryDate).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="p-4">
+                      <Switch
+                        checked={coupon.status === "AVAILABLE"}
+                        onCheckedChange={() => toggleCouponStatus(coupon.id, coupon.status)}
+                      />
+                    </td>
+                    <td className="p-4">
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </CardContent>
       </Card>
 
@@ -241,7 +253,7 @@ export default function CouponsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="discount">
-                  {couponType === CouponType.PERCENTAGE ? "Discount Percentage (%)" : "Discount Amount (R$)"}
+                  {couponType === CouponType.PERCENTAGE ? "Discount Percentage (%)" : "Discount Amount ($)"}
                 </Label>
                 <Input
                   id="discount"

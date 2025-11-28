@@ -43,7 +43,7 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const data = await services.order.getAllOrders()
+      const data = await services.orderService.getAllOrders()
       setOrders(data)
       setFilteredOrders(data)
     } catch (error) {
@@ -104,7 +104,7 @@ export default function OrdersPage() {
 
   const confirmStatusUpdate = async () => {
     try {
-      await services.order.updateOrderStatus(selectedOrder.id, newStatus)
+      await services.orderService.updateOrderStatus(selectedOrder.id, newStatus)
 
       // Update the local state
       const updatedOrders = orders.map((order) => {

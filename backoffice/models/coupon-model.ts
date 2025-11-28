@@ -4,14 +4,16 @@ export class CouponModel {
   id: number
   code: string
   type: CouponType
+  status: string
   discount: number
   expiryDate: Date
   isActive: boolean
 
-  constructor(id: number, code: string, type: CouponType, discount: number, expiryDate: Date, isActive = true) {
+  constructor(id: number, code: string, status: string, type: CouponType, discount: number, expiryDate: Date, isActive = true) {
     this.id = id
     this.code = code
     this.type = type
+    this.status = status
     this.discount = discount
     this.expiryDate = expiryDate
     this.isActive = isActive
@@ -22,6 +24,7 @@ export class CouponModel {
       map.id,
       map.code,
       map.type,
+      map.status,
       map.discount,
       new Date(map.expiry_date),
       map.is_active !== undefined ? map.is_active : true,
@@ -33,6 +36,7 @@ export class CouponModel {
       id: this.id,
       code: this.code,
       type: this.type,
+      status: this.status,
       discount: this.discount,
       expiry_date: this.expiryDate.toISOString(),
       is_active: this.isActive,
