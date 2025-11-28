@@ -29,6 +29,7 @@ export interface AdminServiceInterface {
     dashboard(startDate?: Date, endDate?: Date): Promise<DashboardDataOutputDTO>;
     createCoupon(input: CreateCouponInputDTO): Promise<CouponOutputDTO>;
     toggleCouponStatus(couponId: number, status: string): Promise<CouponOutputDTO>;
+    listCoupons(): Promise<CouponOutputDTO[]>;
     createBrand(name: string): Promise<BrandOutputDTO>;
     deleteBrand(brandId: number): Promise<boolean>;
     listBrands(): Promise<BrandOutputDTO[]>;
@@ -62,6 +63,9 @@ export class AdminService implements AdminServiceInterface {
         this.adminRepository = repositoryFactory.getAdminRepository();
         this.couponRepository = repositoryFactory.getCouponRepository();
         this.brandRepository = repositoryFactory.getBrandRepository();
+    }
+    public async listCoupons(): Promise<CouponOutputDTO[]> {
+        return this.couponService.list();
     }
     
     public async authenticate(email: string, password: string): Promise<AuthOutputDTO> {

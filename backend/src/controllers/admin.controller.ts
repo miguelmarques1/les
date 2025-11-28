@@ -84,6 +84,16 @@ export class AdminController extends BaseController {
         }
     }
 
+    async listCoupons(req: Request, res: Response): Promise<void> {
+        try {
+            const output = await this.adminService.listCoupons();
+
+            super.success(res, output);
+        } catch(error) {
+            super.error(res, error);
+        }
+    }
+
     async createBrand(req: Request, res: Response): Promise<void> {
         try {
             const { name } = req.body;

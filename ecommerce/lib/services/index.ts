@@ -10,7 +10,7 @@ import { OrderService } from "./order-service"
 import { ReturnExchangeService } from "./return-exchange-service"
 
 // Criar instância do serviço de API
-const apiService = new ApiService(process.env.NEXT_PUBLIC_API_URL || "http://backend:3000/api")
+const apiService = new ApiService(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api")
 
 // Criar instâncias dos serviços específicos
 const authService = new AuthService(apiService)

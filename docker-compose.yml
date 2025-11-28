@@ -182,23 +182,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
-
-  backoffice:
-    build:
-      context: ./backoffice
-      dockerfile: .docker/Dockerfile
-    container_name: backoffice
-    ports:
-      - "3002:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3000/api
-      - NODE_ENV=production
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - app-network
-
+      
 secrets:
   jwt_secret:
     file: ./secrets/jwt_secret.txt

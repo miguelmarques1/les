@@ -6,7 +6,7 @@ export class CouponMapper {
     return new CouponOutputDTO(
       coupon.id,
       coupon.code,
-      coupon.discount,
+      Number(coupon.discount),
       coupon.type,
       coupon.status,
       coupon.expiryDate

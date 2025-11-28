@@ -8,6 +8,7 @@ import { RepositoryFactory } from "../factories/RepositoryFactory";
 export interface CouponServiceInterface {
   validate(code?: string, id?: number): Promise<CouponOutputDTO>;
   store(input: CreateCouponInputDTO): Promise<CouponOutputDTO>;
+  list(): Promise<CouponOutputDTO[]>;
 }
 
 export class CouponService implements CouponServiceInterface {
@@ -17,6 +18,11 @@ export class CouponService implements CouponServiceInterface {
     repositoryFactory: RepositoryFactory,
   ) {
     this.couponRepository = repositoryFactory.getCouponRepository();
+  }
+  public async list(): Promise<CouponOutputDTO[]> {
+    const coupons = await this.couponRepository.find();
+
+    return coupons.map(CouponMapper.entityToOutputDTO);
   }
 
   public async validate(code?: string, id?: number): Promise<CouponOutputDTO> {
