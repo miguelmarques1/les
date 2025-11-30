@@ -129,7 +129,7 @@ export class RecommendationService {
                 })) || []
             };
         } catch (e) {
-            return {,
+            return {
                 message: aiResponse,
                 recommendations: []
             };
