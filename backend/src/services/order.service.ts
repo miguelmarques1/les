@@ -1,25 +1,27 @@
 import { Order } from "../domain/entity/Order"
-import type { CreateOrderInputDTO, OrderCardInputDTO, OrderOutputDTO, UpdateOrderStatusInputDTO } from "../dto/order.dto"
+import type { CreateOrderInputDTO, OrderOutputDTO, UpdateOrderStatusInputDTO } from "../dto/order.dto"
 import type { DBTransaction } from "../repositories/DBTransaction"
-import { CartService, type CartServiceInterface } from "./cart.service"
+import { CartService } from "./cart.service"
 import { Transaction as TransactionEntity } from "../domain/entity/Transaction"
+import { CardPayment } from "../domain/entity/CardPayment"
 import { OrderMapper } from "../mapper/OrderMapper"
 import { UnauthorizedException } from "../exceptions/UnauthorizedException"
-import { MonthlySalesOutputDTO } from "../dto/dashboard.dto"
-import { Repository } from "typeorm"
-import { Address } from "../domain/entity/Address"
+import { NotFoundException } from "../exceptions/NotFoundException"
+import type { MonthlySalesOutputDTO } from "../dto/dashboard.dto"
+import type { Repository } from "typeorm"
+import type { Address } from "../domain/entity/Address"
 import { Card } from "../domain/entity/Card"
-import { Coupon } from "../domain/entity/Coupon"
-import { StockBook } from "../domain/entity/StockBook"
-import { RepositoryFactory } from "../factories/RepositoryFactory"
-import { Transaction } from "../domain/entity/Transaction"
-import { Customer } from "../domain/entity/Customer"
-import { Cart } from "../domain/entity/Cart"
-import { OrderRepository } from "../repositories/OrderRepository"
+import type { Coupon } from "../domain/entity/Coupon"
+import type { StockBook } from "../domain/entity/StockBook"
+import type { RepositoryFactory } from "../factories/RepositoryFactory"
+import type { Transaction } from "../domain/entity/Transaction"
+import type { Customer } from "../domain/entity/Customer"
+import type { Cart } from "../domain/entity/Cart"
+import type { OrderRepository } from "../repositories/OrderRepository"
 import { StockBookStatus } from "../domain/enums/StockBookStatus"
-import { Brand } from "../domain/entity/Brand"
-import { MessagePublisherServiceInterface, RabbitMQPublisherService } from "./message-publisher.service"
-import { TransactionMessage } from "../dto/rabbitmq.dto"
+import type { Brand } from "../domain/entity/Brand"
+import { type MessagePublisherServiceInterface, RabbitMQPublisherService } from "./message-publisher.service"
+import type { TransactionMessage } from "../dto/rabbitmq.dto"
 
 export interface OrderServiceInterface {
   store(input: CreateOrderInputDTO): Promise<OrderOutputDTO>
@@ -42,6 +44,7 @@ export class OrderService implements OrderServiceInterface {
   private dbTransaction: DBTransaction
   private orderRepository: Repository<Order> & typeof OrderRepository
   private transactionRepository: Repository<Transaction>
+  private cardPaymentRepository: Repository<CardPayment>
   private customerRepository: Repository<Customer>
   private cartService: CartService
   private brandRepository: Repository<Brand>
@@ -50,6 +53,7 @@ export class OrderService implements OrderServiceInterface {
   public constructor(repositoryFactory: RepositoryFactory) {
     this.orderRepository = repositoryFactory.getOrderRepository()
     this.transactionRepository = repositoryFactory.getTransactionRepository()
+    this.cardPaymentRepository = repositoryFactory.getCardPaymentRepository()
     this.addressRepository = repositoryFactory.getAddressRepository()
     this.cardRepository = repositoryFactory.getCardRepository()
     this.couponRepository = repositoryFactory.getCouponRepository()
@@ -74,20 +78,18 @@ export class OrderService implements OrderServiceInterface {
   }
 
   async averageOrderValue(startDate?: Date, endDate?: Date): Promise<number> {
-    return this.orderRepository.averageOrderValue(startDate, endDate);
+    return this.orderRepository.averageOrderValue(startDate, endDate)
   }
 
   async getRecentOrders(startDate?: Date, endDate?: Date): Promise<OrderOutputDTO[]> {
-    let queryBuilder = this.orderRepository.createQueryBuilder("order")
-      .take(5)
-      .orderBy("order.createdAt", "DESC");
+    let queryBuilder = this.orderRepository.createQueryBuilder("order").take(5).orderBy("order.createdAt", "DESC")
 
     if (startDate) {
-      queryBuilder = queryBuilder.andWhere("order.createdAt >= :startDate", { startDate });
+      queryBuilder = queryBuilder.andWhere("order.createdAt >= :startDate", { startDate })
     }
 
     if (endDate) {
-      queryBuilder = queryBuilder.andWhere("order.createdAt <= :endDate", { endDate });
+      queryBuilder = queryBuilder.andWhere("order.createdAt <= :endDate", { endDate })
     }
 
     const orders = await queryBuilder
@@ -97,10 +99,11 @@ export class OrderService implements OrderServiceInterface {
       .leftJoinAndSelect("book.precificationGroup", "precificationGroup")
       .leftJoinAndSelect("order.customer", "customer")
       .leftJoinAndSelect("order.transaction", "transaction")
+      .leftJoinAndSelect("transaction.cardPayments", "cardPayments")
       .leftJoinAndSelect("transaction.coupon", "coupon")
-      .getMany();
+      .getMany()
 
-    return orders.map(OrderMapper.entityToOutputDTO);
+    return orders.map(OrderMapper.entityToOutputDTO)
   }
 
   async all(): Promise<OrderOutputDTO[]> {
@@ -113,20 +116,21 @@ export class OrderService implements OrderServiceInterface {
           },
         },
         transaction: {
+          cardPayments: true,
           coupon: true,
         },
         customer: true,
-      }
-    });
+      },
+    })
 
-    return orders.map(OrderMapper.entityToOutputDTO);
+    return orders.map(OrderMapper.entityToOutputDTO)
   }
 
   async update(input: UpdateOrderStatusInputDTO): Promise<OrderOutputDTO> {
     const order = await this.orderRepository.findOne({
       where: {
         id: input.order_id,
-      }
+      },
     })
     order.setStatus(input.status)
     await this.orderRepository.save(order)
@@ -147,13 +151,14 @@ export class OrderService implements OrderServiceInterface {
           },
         },
         transaction: {
+          cardPayments: true,
           coupon: true,
         },
         customer: true,
-      }
-    });
+      },
+    })
 
-    return OrderMapper.entityToOutputDTO(order);
+    return OrderMapper.entityToOutputDTO(order)
   }
 
   async index(customerId: number): Promise<OrderOutputDTO[]> {
@@ -161,7 +166,7 @@ export class OrderService implements OrderServiceInterface {
       where: {
         customer: {
           id: customerId,
-        }
+        },
       },
       relations: {
         items: {
@@ -171,84 +176,59 @@ export class OrderService implements OrderServiceInterface {
           },
         },
         transaction: {
+          cardPayments: true,
           coupon: true,
         },
         customer: true,
-      }
+      },
     })
 
-    return orders.map((order) => OrderMapper.entityToOutputDTO(order));
+    return orders.map((order) => OrderMapper.entityToOutputDTO(order))
   }
 
   async store(input: CreateOrderInputDTO): Promise<OrderOutputDTO> {
-    this.dbTransaction.start();
+    this.dbTransaction.start()
     try {
-      const { customer, address, card, coupon } = await this.validateAndGetOrderData(input);
+      const { customer, address, cards, coupon } = await this.validateAndGetOrderData(input)
 
       if (customer.cart.items.length === 0) {
-        throw new Error("Seu carrinho está vazio");
+        throw new Error("Seu carrinho está vazio")
       }
 
-      const order = await this.createOrder(customer, customer.cart, address);
+      this.validatePaymentAmounts(input.cards, customer.cart.getTotal(), coupon)
 
-      const transaction = await this.createTransaction(customer.cart, card, order, coupon);
+      const order = await this.createOrder(customer, customer.cart, address)
 
-      order.transaction = transaction;
+      const transaction = await this.createTransaction(customer.cart, cards, order, coupon)
 
-      await this.orderRepository.save(order);
+      order.transaction = transaction
+      await this.orderRepository.save(order)
 
-      await this.cartService.clear(input.customer_id);
+      await this.cartService.clear(input.customer_id)
 
-      this.dbTransaction.commit();
-      return this.show(order.id);
+      await this.sendPaymentToQueue(transaction)
+
+      this.dbTransaction.commit()
+      return this.show(order.id)
     } catch (e) {
-      this.dbTransaction.rollback();
-      throw e;
+      this.dbTransaction.rollback()
+      throw e
     }
+  }
+
+  private validatePaymentAmounts(cardPayments: { amount: number }[], cartTotal: number, coupon: Coupon | null): void {
+    const totalPaid = cardPayments.reduce((sum, payment) => sum + payment.amount, 0)
+    const expectedTotal = coupon ? cartTotal - coupon.discount : cartTotal
   }
 
   private async validateAndGetOrderData(input: CreateOrderInputDTO): Promise<{
-    customer: Customer,
-    address: Address,
-    card: Card,
+    customer: Customer
+    address: Address
+    cards: { card: Card; amount: number }[]
     coupon: Coupon | null
   }> {
-    const customer = await this.getCustomer(input.customer_id);
-    const card = await this.getCard(input, customer);
-    const address = await this.validateCustomerAddress(input.address_id, input.customer_id);
-    const coupon = await this.getCouponIfExists(input.coupon_code);
-
-    return { customer, address, card, coupon };
-  }
-
-  private async getCard(input: CreateOrderInputDTO, customer: Customer): Promise<Card> {
-    let card: Card;
-
-    if (input.card_id != null) {
-      card = await this.validateCustomerCard(input.card_id, input.customer_id);
-      return card;
-    }
-
-    const brand = await this.brandRepository.findOne({
-      where: {
-        id: input.card.brandId,
-      }
-    });
-    card = new Card(
-      input.card.number,
-      input.card.holderName,
-      input.card.cvv,
-      customer,
-      input.card.expiryDate,
-      brand,
-    )
-
-    return card;
-  }
-
-  private async getCustomer(customerId: number): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
-      where: { id: customerId },
+      where: { id: input.customer_id },
       relations: {
         cart: {
           items: {
@@ -256,27 +236,59 @@ export class OrderService implements OrderServiceInterface {
               book: {
                 categories: true,
                 precificationGroup: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
-      }
-    });
+      },
+    })
+
     if (!customer) {
-      throw new UnauthorizedException("Cliente não encontrado no sistema");
+      throw new NotFoundException("Cliente não encontrado")
     }
-    return customer;
+
+    const cards = await this.getCards(input, customer)
+    const address = await this.validateCustomerAddress(input.address_id, input.customer_id)
+    const coupon = await this.getCouponIfExists(input.coupon_code)
+
+    return { customer, address, cards, coupon }
+  }
+
+  private async getCards(input: CreateOrderInputDTO, customer: Customer): Promise<{ card: Card; amount: number }[]> {
+    const cardPromises = input.cards.map(async (cardPayment) => {
+      let card: Card
+
+      if (cardPayment.card_id != null) {
+        card = await this.validateCustomerCard(cardPayment.card_id, input.customer_id)
+      } else {
+        const brand = await this.brandRepository.findOne({
+          where: { id: cardPayment.card.brandId },
+        })
+        card = new Card(
+          cardPayment.card.number,
+          cardPayment.card.holderName,
+          cardPayment.card.cvv,
+          customer,
+          cardPayment.card.expiryDate,
+          brand,
+        )
+      }
+
+      return { card, amount: cardPayment.amount }
+    })
+
+    return Promise.all(cardPromises)
   }
 
   private async validateCustomerAddress(addressId: number, customerId: number): Promise<Address> {
     const address = await this.addressRepository.findOne({
       where: { id: addressId },
-      relations: ['customer']
-    });
+      relations: ["customer"],
+    })
     if (!address || address.customer.id !== customerId) {
-      throw new UnauthorizedException("Acesso negado ao endereço");
+      throw new UnauthorizedException("Acesso negado ao endereço")
     }
-    return address;
+    return address
   }
 
   private async validateCustomerCard(cardId: number, customerId: number): Promise<Card> {
@@ -285,68 +297,83 @@ export class OrderService implements OrderServiceInterface {
       relations: {
         customer: true,
         brand: true,
-      }
-    });
+      },
+    })
     if (!card || card.customer.id !== customerId) {
-      throw new UnauthorizedException("Acesso negado ao cartão");
+      throw new UnauthorizedException("Acesso negado ao cartão")
     }
-    return card;
+    return card
   }
 
   private async getCouponIfExists(couponCode?: string): Promise<Coupon | null> {
-    if (!couponCode) return null;
-    return await this.couponRepository.findOne({ where: { code: couponCode } });
+    if (!couponCode) return null
+    return await this.couponRepository.findOne({ where: { code: couponCode } })
   }
 
-  private async createOrder(
-    customer: Customer,
-    cart: Cart,
-    address: Address
-  ): Promise<Order> {
-    const stockItems = cart.items.map(item => item.stockBook);
-    for (let stockItem of stockItems) {
-      stockItem.status = StockBookStatus.SOLD;
-      stockItem.saleDate = new Date();
-      await this.stockBookRepository.save(stockItem);
+  private async createOrder(customer: Customer, cart: Cart, address: Address): Promise<Order> {
+    const stockItems = cart.items.map((item) => item.stockBook)
+
+    const alreadySold = stockItems.filter((si) => si.status === StockBookStatus.SOLD)
+    if (alreadySold.length > 0) {
+      throw new Error(`Os seguintes itens já foram vendidos: ${alreadySold.map((si) => si.id).join(", ")}`)
     }
 
-    const order = new Order(stockItems, customer, address, "PROCESSING");
-    return await this.orderRepository.save(order);
+    const stockBookIds = stockItems.map((si) => si.id)
+    const uniqueIds = Array.from(new Set(stockBookIds))
+    if (stockBookIds.length !== uniqueIds.length) {
+      throw new Error("Itens duplicados encontrados no carrinho")
+    }
+
+    for (const stockItem of stockItems) {
+      stockItem.status = StockBookStatus.SOLD
+      stockItem.saleDate = new Date()
+      await this.stockBookRepository.save(stockItem)
+    }
+
+    const order = new Order(stockItems, customer, address, "PROCESSING")
+    return await this.orderRepository.save(order)
   }
 
   private async createTransaction(
     cart: Cart,
-    card: Card,
+    cards: { card: Card; amount: number }[],
     order: Order,
-    coupon: Coupon | null
+    coupon: Coupon | null,
   ): Promise<TransactionEntity> {
-    const transaction = new TransactionEntity(
-      cart.getTotal(),
-      order,
-      card,
-      coupon,
-      new Date()
-    );
+    // Calcula o total de todos os pagamentos
+    const totalAmount = cards.reduce((sum, { amount }) => sum + amount, 0)
 
-    const response = await this.transactionRepository.save(transaction);
-  
-    await this.makePayment(transaction);
+    // Cria a transaction
+    const transaction = new TransactionEntity(totalAmount, order, coupon, new Date())
+    const savedTransaction = await this.transactionRepository.save(transaction)
 
-    return response;
-  }
-
-  private async makePayment(transaction: Transaction) {
-    const message: TransactionMessage = {
-      amount: transaction.amount,
-      card: {
-        cvv: transaction.cardCVV,
-        expiryDate: transaction.cardExpiryDate,
-        holderName: transaction.cardHolderName,
-        number: transaction.cardNumber,
-      },
-      id: transaction.id,
+    // Cria os CardPayments para cada cartão
+    const cardPayments: CardPayment[] = []
+    for (const { card, amount } of cards) {
+      const cardPayment = new CardPayment(amount, card, savedTransaction)
+      const savedCardPayment = await this.cardPaymentRepository.save(cardPayment)
+      cardPayments.push(savedCardPayment)
     }
 
-    await this.messageService.publish(message);
+    savedTransaction.cardPayments = cardPayments
+    return savedTransaction
+  }
+
+  private async sendPaymentToQueue(transaction: TransactionEntity): Promise<void> {
+    // Usa o primeiro cardPayment para enviar ao RabbitMQ
+    const primaryCardPayment = transaction.cardPayments[0]
+
+    const message: TransactionMessage = {
+      id: transaction.id,
+      amount: transaction.amount,
+      card: {
+        cvv: primaryCardPayment.cardCVV,
+        expiryDate: primaryCardPayment.cardExpiryDate,
+        holderName: primaryCardPayment.cardHolderName,
+        number: primaryCardPayment.cardNumber,
+      },
+    }
+
+    await this.messageService.publish(message)
   }
 }

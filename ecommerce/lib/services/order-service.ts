@@ -1,5 +1,5 @@
 import type { PaymentMethod } from "../enums/payment-method"
-import type { OrderModel, OrderCardInput } from "../models/order-model"
+import type { OrderModel, OrderCardInput, OrderCardPayment } from "../models/order-model"
 import type { ApiService } from "./api-service"
 
 export class OrderService {
@@ -15,6 +15,7 @@ export class OrderService {
     cardId?: number,
     couponCode?: string,
     temporaryCard?: OrderCardInput,
+    multipleCards?: OrderCardPayment[],
   ): Promise<OrderModel> {
     const request: any = {
       address_id: addressId,
@@ -24,7 +25,13 @@ export class OrderService {
       request.coupon_code = couponCode
     }
 
-    if (temporaryCard) {
+    if (multipleCards && multipleCards.length > 0) {
+      request.cards = multipleCards.map((payment) => ({
+        card_id: payment.cardId,
+        card: payment.card,
+        amount: payment.amount,
+      }))
+    } else if (temporaryCard) {
       request.card = {
         number: temporaryCard.number,
         holderName: temporaryCard.holderName,

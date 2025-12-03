@@ -42,6 +42,18 @@ export class OrderModel {
       transaction: this.transaction.toMap(),
     }
   }
+
+  getTotalAmount(): number {
+    return this.items.reduce((sum, item) => sum + item.unitPrice, 0)
+  }
+
+  getFinalPrice(): number {
+    return Number(this.transaction.amount)
+  }
+
+  getCreatedAt(): Date {
+    return this.transaction.date
+  }
 }
 
 export class OrderAddressModel {
@@ -126,6 +138,7 @@ export interface OrderRequest {
   coupon_code?: string
   card?: OrderCardInput
   card_id?: number
+  cards?: OrderCardPayment[]
 }
 
 export interface OrderCardInput {
@@ -134,4 +147,10 @@ export interface OrderCardInput {
   cvv: string
   expiryDate: string
   brandId: number
+}
+
+export interface OrderCardPayment {
+  cardId?: number // ID for saved cards
+  card?: OrderCardInput // Full card data for temporary cards
+  amount: number // Amount to charge on this card
 }

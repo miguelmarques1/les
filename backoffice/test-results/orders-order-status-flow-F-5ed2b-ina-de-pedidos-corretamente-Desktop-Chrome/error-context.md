@@ -1,0 +1,515 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: AB
+        - generic [ref=e6]:
+          - heading "Analise" [level=1] [ref=e7]
+          - paragraph [ref=e8]: Bookstore Admin
+      - navigation [ref=e9]:
+        - list [ref=e10]:
+          - listitem [ref=e11]:
+            - link "Painel" [ref=e12] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e13]
+              - generic [ref=e18]: Painel
+          - listitem [ref=e19]:
+            - link "Livros" [ref=e20] [cursor=pointer]:
+              - /url: /dashboard/books
+              - img [ref=e21]
+              - generic [ref=e23]: Livros
+          - listitem [ref=e24]:
+            - link "Pedidos" [ref=e25] [cursor=pointer]:
+              - /url: /dashboard/orders
+              - img [ref=e26]
+              - generic [ref=e30]: Pedidos
+          - listitem [ref=e31]:
+            - link "Trocas & Devoluções" [ref=e32] [cursor=pointer]:
+              - /url: /dashboard/returns
+              - img [ref=e33]
+              - generic [ref=e38]: Trocas & Devoluções
+          - listitem [ref=e39]:
+            - link "Bandeiras de Cartão" [ref=e40] [cursor=pointer]:
+              - /url: /dashboard/card-brands
+              - img [ref=e41]
+              - generic [ref=e43]: Bandeiras de Cartão
+          - listitem [ref=e44]:
+            - link "Cupons" [ref=e45] [cursor=pointer]:
+              - /url: /dashboard/coupons
+              - img [ref=e46]
+              - generic [ref=e48]: Cupons
+          - listitem [ref=e49]:
+            - link "Clientes" [ref=e50] [cursor=pointer]:
+              - /url: /dashboard/customers
+              - img [ref=e51]
+              - generic [ref=e56]: Clientes
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e61]: A
+          - generic [ref=e62]:
+            - paragraph [ref=e63]: Admin User
+            - paragraph [ref=e64]: admin@analise.com
+        - button "Logout" [ref=e65] [cursor=pointer]:
+          - img [ref=e66]
+    - generic [ref=e70]:
+      - heading "Orders" [level=1] [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - img [ref=e75]
+          - textbox "Pesquisar por ID do pedido ou Cliente" [ref=e78]
+        - combobox [ref=e79] [cursor=pointer]:
+          - generic: Todos os Status
+          - img [ref=e80]
+        - combobox [ref=e82] [cursor=pointer]:
+          - generic: Mais novo
+          - img [ref=e83]
+      - table [ref=e87]:
+        - rowgroup [ref=e88]:
+          - row "Order ID Customer Date Items Total Status Actions" [ref=e89]:
+            - columnheader "Order ID" [ref=e90]
+            - columnheader "Customer" [ref=e91]
+            - columnheader "Date" [ref=e92]
+            - columnheader "Items" [ref=e93]
+            - columnheader "Total" [ref=e94]
+            - columnheader "Status" [ref=e95]
+            - columnheader "Actions" [ref=e96]
+        - rowgroup [ref=e97]:
+          - row "#33 Customer - - 1 items $125.79 Delivered Atualizar Status" [ref=e98]:
+            - cell "#33" [ref=e99]
+            - cell "Customer -" [ref=e100]:
+              - generic [ref=e101]:
+                - generic [ref=e102]: Customer
+                - generic [ref=e103]: "-"
+            - cell "-" [ref=e104]
+            - cell "1 items" [ref=e105]
+            - cell "$125.79" [ref=e106]
+            - cell "Delivered" [ref=e107]:
+              - generic [ref=e108]: Delivered
+            - cell "Atualizar Status" [ref=e109]:
+              - generic [ref=e110]:
+                - button "Atualizar Status" [ref=e111] [cursor=pointer]
+                - link [ref=e112] [cursor=pointer]:
+                  - /url: /dashboard/orders/33
+                  - button [ref=e113]:
+                    - img
+          - row "#34 Customer - - 1 items $125.79 Delivered Atualizar Status" [ref=e114]:
+            - cell "#34" [ref=e115]
+            - cell "Customer -" [ref=e116]:
+              - generic [ref=e117]:
+                - generic [ref=e118]: Customer
+                - generic [ref=e119]: "-"
+            - cell "-" [ref=e120]
+            - cell "1 items" [ref=e121]
+            - cell "$125.79" [ref=e122]
+            - cell "Delivered" [ref=e123]:
+              - generic [ref=e124]: Delivered
+            - cell "Atualizar Status" [ref=e125]:
+              - generic [ref=e126]:
+                - button "Atualizar Status" [ref=e127] [cursor=pointer]
+                - link [ref=e128] [cursor=pointer]:
+                  - /url: /dashboard/orders/34
+                  - button [ref=e129]:
+                    - img
+          - row "#35 Customer - - 1 items $125.79 Delivered Atualizar Status" [ref=e130]:
+            - cell "#35" [ref=e131]
+            - cell "Customer -" [ref=e132]:
+              - generic [ref=e133]:
+                - generic [ref=e134]: Customer
+                - generic [ref=e135]: "-"
+            - cell "-" [ref=e136]
+            - cell "1 items" [ref=e137]
+            - cell "$125.79" [ref=e138]
+            - cell "Delivered" [ref=e139]:
+              - generic [ref=e140]: Delivered
+            - cell "Atualizar Status" [ref=e141]:
+              - generic [ref=e142]:
+                - button "Atualizar Status" [ref=e143] [cursor=pointer]
+                - link [ref=e144] [cursor=pointer]:
+                  - /url: /dashboard/orders/35
+                  - button [ref=e145]:
+                    - img
+          - row "#36 Customer - - 1 items $125.79 Delivered Atualizar Status" [ref=e146]:
+            - cell "#36" [ref=e147]
+            - cell "Customer -" [ref=e148]:
+              - generic [ref=e149]:
+                - generic [ref=e150]: Customer
+                - generic [ref=e151]: "-"
+            - cell "-" [ref=e152]
+            - cell "1 items" [ref=e153]
+            - cell "$125.79" [ref=e154]
+            - cell "Delivered" [ref=e155]:
+              - generic [ref=e156]: Delivered
+            - cell "Atualizar Status" [ref=e157]:
+              - generic [ref=e158]:
+                - button "Atualizar Status" [ref=e159] [cursor=pointer]
+                - link [ref=e160] [cursor=pointer]:
+                  - /url: /dashboard/orders/36
+                  - button [ref=e161]:
+                    - img
+          - row "#37 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e162]:
+            - cell "#37" [ref=e163]
+            - cell "Customer -" [ref=e164]:
+              - generic [ref=e165]:
+                - generic [ref=e166]: Customer
+                - generic [ref=e167]: "-"
+            - cell "-" [ref=e168]
+            - cell "1 items" [ref=e169]
+            - cell "$125.79" [ref=e170]
+            - cell "Approved" [ref=e171]:
+              - generic [ref=e172]: Approved
+            - cell "Atualizar Status" [ref=e173]:
+              - generic [ref=e174]:
+                - button "Atualizar Status" [ref=e175] [cursor=pointer]
+                - link [ref=e176] [cursor=pointer]:
+                  - /url: /dashboard/orders/37
+                  - button [ref=e177]:
+                    - img
+          - row "#38 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e178]:
+            - cell "#38" [ref=e179]
+            - cell "Customer -" [ref=e180]:
+              - generic [ref=e181]:
+                - generic [ref=e182]: Customer
+                - generic [ref=e183]: "-"
+            - cell "-" [ref=e184]
+            - cell "1 items" [ref=e185]
+            - cell "$125.79" [ref=e186]
+            - cell "Approved" [ref=e187]:
+              - generic [ref=e188]: Approved
+            - cell "Atualizar Status" [ref=e189]:
+              - generic [ref=e190]:
+                - button "Atualizar Status" [ref=e191] [cursor=pointer]
+                - link [ref=e192] [cursor=pointer]:
+                  - /url: /dashboard/orders/38
+                  - button [ref=e193]:
+                    - img
+          - row "#41 Customer - - 1 items $125.79 Delivered Atualizar Status" [ref=e194]:
+            - cell "#41" [ref=e195]
+            - cell "Customer -" [ref=e196]:
+              - generic [ref=e197]:
+                - generic [ref=e198]: Customer
+                - generic [ref=e199]: "-"
+            - cell "-" [ref=e200]
+            - cell "1 items" [ref=e201]
+            - cell "$125.79" [ref=e202]
+            - cell "Delivered" [ref=e203]:
+              - generic [ref=e204]: Delivered
+            - cell "Atualizar Status" [ref=e205]:
+              - generic [ref=e206]:
+                - button "Atualizar Status" [ref=e207] [cursor=pointer]
+                - link [ref=e208] [cursor=pointer]:
+                  - /url: /dashboard/orders/41
+                  - button [ref=e209]:
+                    - img
+          - row "#52 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e210]:
+            - cell "#52" [ref=e211]
+            - cell "Customer -" [ref=e212]:
+              - generic [ref=e213]:
+                - generic [ref=e214]: Customer
+                - generic [ref=e215]: "-"
+            - cell "-" [ref=e216]
+            - cell "1 items" [ref=e217]
+            - cell "$125.79" [ref=e218]
+            - cell "Approved" [ref=e219]:
+              - generic [ref=e220]: Approved
+            - cell "Atualizar Status" [ref=e221]:
+              - generic [ref=e222]:
+                - button "Atualizar Status" [ref=e223] [cursor=pointer]
+                - link [ref=e224] [cursor=pointer]:
+                  - /url: /dashboard/orders/52
+                  - button [ref=e225]:
+                    - img
+          - row "#53 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e226]:
+            - cell "#53" [ref=e227]
+            - cell "Customer -" [ref=e228]:
+              - generic [ref=e229]:
+                - generic [ref=e230]: Customer
+                - generic [ref=e231]: "-"
+            - cell "-" [ref=e232]
+            - cell "1 items" [ref=e233]
+            - cell "$125.79" [ref=e234]
+            - cell "Approved" [ref=e235]:
+              - generic [ref=e236]: Approved
+            - cell "Atualizar Status" [ref=e237]:
+              - generic [ref=e238]:
+                - button "Atualizar Status" [ref=e239] [cursor=pointer]
+                - link [ref=e240] [cursor=pointer]:
+                  - /url: /dashboard/orders/53
+                  - button [ref=e241]:
+                    - img
+          - row "#54 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e242]:
+            - cell "#54" [ref=e243]
+            - cell "Customer -" [ref=e244]:
+              - generic [ref=e245]:
+                - generic [ref=e246]: Customer
+                - generic [ref=e247]: "-"
+            - cell "-" [ref=e248]
+            - cell "1 items" [ref=e249]
+            - cell "$125.79" [ref=e250]
+            - cell "Approved" [ref=e251]:
+              - generic [ref=e252]: Approved
+            - cell "Atualizar Status" [ref=e253]:
+              - generic [ref=e254]:
+                - button "Atualizar Status" [ref=e255] [cursor=pointer]
+                - link [ref=e256] [cursor=pointer]:
+                  - /url: /dashboard/orders/54
+                  - button [ref=e257]:
+                    - img
+          - row "#55 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e258]:
+            - cell "#55" [ref=e259]
+            - cell "Customer -" [ref=e260]:
+              - generic [ref=e261]:
+                - generic [ref=e262]: Customer
+                - generic [ref=e263]: "-"
+            - cell "-" [ref=e264]
+            - cell "1 items" [ref=e265]
+            - cell "$125.79" [ref=e266]
+            - cell "Approved" [ref=e267]:
+              - generic [ref=e268]: Approved
+            - cell "Atualizar Status" [ref=e269]:
+              - generic [ref=e270]:
+                - button "Atualizar Status" [ref=e271] [cursor=pointer]
+                - link [ref=e272] [cursor=pointer]:
+                  - /url: /dashboard/orders/55
+                  - button [ref=e273]:
+                    - img
+          - row "#56 Customer - - 2 items $235.68 Approved Atualizar Status" [ref=e274]:
+            - cell "#56" [ref=e275]
+            - cell "Customer -" [ref=e276]:
+              - generic [ref=e277]:
+                - generic [ref=e278]: Customer
+                - generic [ref=e279]: "-"
+            - cell "-" [ref=e280]
+            - cell "2 items" [ref=e281]
+            - cell "$235.68" [ref=e282]
+            - cell "Approved" [ref=e283]:
+              - generic [ref=e284]: Approved
+            - cell "Atualizar Status" [ref=e285]:
+              - generic [ref=e286]:
+                - button "Atualizar Status" [ref=e287] [cursor=pointer]
+                - link [ref=e288] [cursor=pointer]:
+                  - /url: /dashboard/orders/56
+                  - button [ref=e289]:
+                    - img
+          - row "#57 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e290]:
+            - cell "#57" [ref=e291]
+            - cell "Customer -" [ref=e292]:
+              - generic [ref=e293]:
+                - generic [ref=e294]: Customer
+                - generic [ref=e295]: "-"
+            - cell "-" [ref=e296]
+            - cell "1 items" [ref=e297]
+            - cell "$125.79" [ref=e298]
+            - cell "Approved" [ref=e299]:
+              - generic [ref=e300]: Approved
+            - cell "Atualizar Status" [ref=e301]:
+              - generic [ref=e302]:
+                - button "Atualizar Status" [ref=e303] [cursor=pointer]
+                - link [ref=e304] [cursor=pointer]:
+                  - /url: /dashboard/orders/57
+                  - button [ref=e305]:
+                    - img
+          - row "#58 Customer - - 2 items $235.68 Approved Atualizar Status" [ref=e306]:
+            - cell "#58" [ref=e307]
+            - cell "Customer -" [ref=e308]:
+              - generic [ref=e309]:
+                - generic [ref=e310]: Customer
+                - generic [ref=e311]: "-"
+            - cell "-" [ref=e312]
+            - cell "2 items" [ref=e313]
+            - cell "$235.68" [ref=e314]
+            - cell "Approved" [ref=e315]:
+              - generic [ref=e316]: Approved
+            - cell "Atualizar Status" [ref=e317]:
+              - generic [ref=e318]:
+                - button "Atualizar Status" [ref=e319] [cursor=pointer]
+                - link [ref=e320] [cursor=pointer]:
+                  - /url: /dashboard/orders/58
+                  - button [ref=e321]:
+                    - img
+          - row "#59 Customer - - 6 items $675.24 Approved Atualizar Status" [ref=e322]:
+            - cell "#59" [ref=e323]
+            - cell "Customer -" [ref=e324]:
+              - generic [ref=e325]:
+                - generic [ref=e326]: Customer
+                - generic [ref=e327]: "-"
+            - cell "-" [ref=e328]
+            - cell "6 items" [ref=e329]
+            - cell "$675.24" [ref=e330]
+            - cell "Approved" [ref=e331]:
+              - generic [ref=e332]: Approved
+            - cell "Atualizar Status" [ref=e333]:
+              - generic [ref=e334]:
+                - button "Atualizar Status" [ref=e335] [cursor=pointer]
+                - link [ref=e336] [cursor=pointer]:
+                  - /url: /dashboard/orders/59
+                  - button [ref=e337]:
+                    - img
+          - row "#60 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e338]:
+            - cell "#60" [ref=e339]
+            - cell "Customer -" [ref=e340]:
+              - generic [ref=e341]:
+                - generic [ref=e342]: Customer
+                - generic [ref=e343]: "-"
+            - cell "-" [ref=e344]
+            - cell "1 items" [ref=e345]
+            - cell "$125.79" [ref=e346]
+            - cell "Approved" [ref=e347]:
+              - generic [ref=e348]: Approved
+            - cell "Atualizar Status" [ref=e349]:
+              - generic [ref=e350]:
+                - button "Atualizar Status" [ref=e351] [cursor=pointer]
+                - link [ref=e352] [cursor=pointer]:
+                  - /url: /dashboard/orders/60
+                  - button [ref=e353]:
+                    - img
+          - row "#61 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e354]:
+            - cell "#61" [ref=e355]
+            - cell "Customer -" [ref=e356]:
+              - generic [ref=e357]:
+                - generic [ref=e358]: Customer
+                - generic [ref=e359]: "-"
+            - cell "-" [ref=e360]
+            - cell "1 items" [ref=e361]
+            - cell "$125.79" [ref=e362]
+            - cell "Approved" [ref=e363]:
+              - generic [ref=e364]: Approved
+            - cell "Atualizar Status" [ref=e365]:
+              - generic [ref=e366]:
+                - button "Atualizar Status" [ref=e367] [cursor=pointer]
+                - link [ref=e368] [cursor=pointer]:
+                  - /url: /dashboard/orders/61
+                  - button [ref=e369]:
+                    - img
+          - row "#62 Customer - - 1 items $15.90 Approved Atualizar Status" [ref=e370]:
+            - cell "#62" [ref=e371]
+            - cell "Customer -" [ref=e372]:
+              - generic [ref=e373]:
+                - generic [ref=e374]: Customer
+                - generic [ref=e375]: "-"
+            - cell "-" [ref=e376]
+            - cell "1 items" [ref=e377]
+            - cell "$15.90" [ref=e378]
+            - cell "Approved" [ref=e379]:
+              - generic [ref=e380]: Approved
+            - cell "Atualizar Status" [ref=e381]:
+              - generic [ref=e382]:
+                - button "Atualizar Status" [ref=e383] [cursor=pointer]
+                - link [ref=e384] [cursor=pointer]:
+                  - /url: /dashboard/orders/62
+                  - button [ref=e385]:
+                    - img
+          - row "#63 Customer - - 2 items $291.67 Delivered Atualizar Status" [ref=e386]:
+            - cell "#63" [ref=e387]
+            - cell "Customer -" [ref=e388]:
+              - generic [ref=e389]:
+                - generic [ref=e390]: Customer
+                - generic [ref=e391]: "-"
+            - cell "-" [ref=e392]
+            - cell "2 items" [ref=e393]
+            - cell "$291.67" [ref=e394]
+            - cell "Delivered" [ref=e395]:
+              - generic [ref=e396]: Delivered
+            - cell "Atualizar Status" [ref=e397]:
+              - generic [ref=e398]:
+                - button "Atualizar Status" [ref=e399] [cursor=pointer]
+                - link [ref=e400] [cursor=pointer]:
+                  - /url: /dashboard/orders/63
+                  - button [ref=e401]:
+                    - img
+          - row "#64 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e402]:
+            - cell "#64" [ref=e403]
+            - cell "Customer -" [ref=e404]:
+              - generic [ref=e405]:
+                - generic [ref=e406]: Customer
+                - generic [ref=e407]: "-"
+            - cell "-" [ref=e408]
+            - cell "1 items" [ref=e409]
+            - cell "$125.79" [ref=e410]
+            - cell "Approved" [ref=e411]:
+              - generic [ref=e412]: Approved
+            - cell "Atualizar Status" [ref=e413]:
+              - generic [ref=e414]:
+                - button "Atualizar Status" [ref=e415] [cursor=pointer]
+                - link [ref=e416] [cursor=pointer]:
+                  - /url: /dashboard/orders/64
+                  - button [ref=e417]:
+                    - img
+          - row "#65 Customer - - 1 items $125.79 Rejected Atualizar Status" [ref=e418]:
+            - cell "#65" [ref=e419]
+            - cell "Customer -" [ref=e420]:
+              - generic [ref=e421]:
+                - generic [ref=e422]: Customer
+                - generic [ref=e423]: "-"
+            - cell "-" [ref=e424]
+            - cell "1 items" [ref=e425]
+            - cell "$125.79" [ref=e426]
+            - cell "Rejected" [ref=e427]:
+              - generic [ref=e428]: Rejected
+            - cell "Atualizar Status" [ref=e429]:
+              - generic [ref=e430]:
+                - button "Atualizar Status" [ref=e431] [cursor=pointer]
+                - link [ref=e432] [cursor=pointer]:
+                  - /url: /dashboard/orders/65
+                  - button [ref=e433]:
+                    - img
+          - row "#66 Customer - - 1 items $125.79 Approved Atualizar Status" [ref=e434]:
+            - cell "#66" [ref=e435]
+            - cell "Customer -" [ref=e436]:
+              - generic [ref=e437]:
+                - generic [ref=e438]: Customer
+                - generic [ref=e439]: "-"
+            - cell "-" [ref=e440]
+            - cell "1 items" [ref=e441]
+            - cell "$125.79" [ref=e442]
+            - cell "Approved" [ref=e443]:
+              - generic [ref=e444]: Approved
+            - cell "Atualizar Status" [ref=e445]:
+              - generic [ref=e446]:
+                - button "Atualizar Status" [ref=e447] [cursor=pointer]
+                - link [ref=e448] [cursor=pointer]:
+                  - /url: /dashboard/orders/66
+                  - button [ref=e449]:
+                    - img
+          - row "#67 Customer - - 1 items $114.80 Rejected Atualizar Status" [ref=e450]:
+            - cell "#67" [ref=e451]
+            - cell "Customer -" [ref=e452]:
+              - generic [ref=e453]:
+                - generic [ref=e454]: Customer
+                - generic [ref=e455]: "-"
+            - cell "-" [ref=e456]
+            - cell "1 items" [ref=e457]
+            - cell "$114.80" [ref=e458]
+            - cell "Rejected" [ref=e459]:
+              - generic [ref=e460]: Rejected
+            - cell "Atualizar Status" [ref=e461]:
+              - generic [ref=e462]:
+                - button "Atualizar Status" [ref=e463] [cursor=pointer]
+                - link [ref=e464] [cursor=pointer]:
+                  - /url: /dashboard/orders/67
+                  - button [ref=e465]:
+                    - img
+          - row "#68 Customer - - 3 items $393.58 Delivered Atualizar Status" [ref=e466]:
+            - cell "#68" [ref=e467]
+            - cell "Customer -" [ref=e468]:
+              - generic [ref=e469]:
+                - generic [ref=e470]: Customer
+                - generic [ref=e471]: "-"
+            - cell "-" [ref=e472]
+            - cell "3 items" [ref=e473]
+            - cell "$393.58" [ref=e474]
+            - cell "Delivered" [ref=e475]:
+              - generic [ref=e476]: Delivered
+            - cell "Atualizar Status" [ref=e477]:
+              - generic [ref=e478]:
+                - button "Atualizar Status" [ref=e479] [cursor=pointer]
+                - link [ref=e480] [cursor=pointer]:
+                  - /url: /dashboard/orders/68
+                  - button [ref=e481]:
+                    - img
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=e482]
+```

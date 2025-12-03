@@ -35,7 +35,7 @@ export class OrderController extends BaseController {
 
             return super.success(res, output);
         } catch (e: any) {
-            console.log((e as Error).stack)
+            console.log((e as Error).stack);
             return super.error(res, e);
         }
     }

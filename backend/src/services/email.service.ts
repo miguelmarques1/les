@@ -16,7 +16,8 @@ export class EmailService implements EmailServiceInterface {
   }
 
   public async send(to: string, message: string): Promise<void> {
-    const msg = {
+    try {
+      const msg = {
       to,
       from: {
         email: this.senderEmail,
@@ -27,5 +28,8 @@ export class EmailService implements EmailServiceInterface {
     };
 
     await sgMail.send(msg);
+    } catch(e) {
+      console.log((e as Error).message);
+    }
   }
 }

@@ -17,13 +17,15 @@ import { useCart } from "@/lib/hooks/use-cart"
 import { useAddresses } from "@/lib/hooks/use-addresses"
 import { useCards } from "@/lib/hooks/use-cards"
 import { useOrders } from "@/lib/hooks/use-orders"
-import { useCoupon } from "@/lib/hooks/use-coupon"
+import { useMultipleCoupons, validateMultipleCardPayments } from "@/lib/hooks/use-multiple-coupons"
 import { PaymentMethod } from "@/lib/enums/payment-method"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AddressType } from "@/lib/enums/address-type"
 import { ResidenceType } from "@/lib/enums/residence-type"
-import type { OrderCardInput } from "@/lib/models/order-model"
+import type { OrderCardPayment } from "@/lib/models/order-model"
+import MultiCardPayment from "@/components/multi-card-payment"
+import Link from "next/link"
 import { useBrands } from "@/lib/hooks/use-brands"
 
 // Checkout steps
@@ -61,9 +63,19 @@ export default function CheckoutPage() {
   const { cart, groupedItems, isLoading: isCartLoading, refreshCart } = useCart()
   const { addresses, isLoading: isAddressesLoading, createAddress } = useAddresses()
   const { cards, isLoading: isCardsLoading, createCard } = useCards()
+  const { brands, isLoading: isBrandsLoading } = useBrands()
   const { createOrder, isLoading: isOrderLoading } = useOrders()
-  const { brands, isLoading: brandsLoading } = useBrands()
-  const { coupon, validateCoupon, clearCoupon, isLoading: isCouponLoading } = useCoupon()
+  const {
+    coupons,
+    validateAndAddCoupon,
+    removeCoupon: removeMultipleCoupon,
+    calculateTotalDiscount,
+    canAddMoreCoupons,
+    clearCoupons,
+    getCouponCodes,
+    isLoading: isCouponLoading,
+    error: couponError,
+  } = useMultipleCoupons()
 
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("shipping")
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
@@ -73,10 +85,12 @@ export default function CheckoutPage() {
   const [isNewAddress, setIsNewAddress] = useState(false)
   const [isNewPayment, setIsNewPayment] = useState(false)
   const [useTemporaryCard, setUseTemporaryCard] = useState(false)
+  const [useMultipleCards, setUseMultipleCards] = useState(false)
+  const [multipleCardPayments, setMultipleCardPayments] = useState<OrderCardPayment[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [couponCode, setCouponCode] = useState("")
-  const [couponError, setCouponError] = useState<string | null>(null)
-  const [hasCouponApplied, setHasCouponApplied] = useState(false)
+  const [localCouponError, setLocalCouponError] = useState<string | null>(null)
+  const [tempCard, setTempCard] = useState<CardFormState | null>(null)
 
   // Form states
   const [addressForm, setAddressForm] = useState<AddressFormState>({
@@ -108,10 +122,10 @@ export default function CheckoutPage() {
     if (addresses.length > 0 && !selectedAddressId) {
       setSelectedAddressId(addresses[0].id || null)
     }
-    if (cards.length > 0 && !selectedPaymentId && !useTemporaryCard) {
+    if (cards.length > 0 && !selectedPaymentId && !useTemporaryCard && !useMultipleCards) {
       setSelectedPaymentId(cards[0].id || null)
     }
-  }, [addresses, cards, selectedAddressId, selectedPaymentId, useTemporaryCard])
+  }, [addresses, cards, selectedAddressId, selectedPaymentId, useTemporaryCard, useMultipleCards])
 
   // Calculate subtotal
   const subtotal = cart?.total || 0
@@ -119,50 +133,10 @@ export default function CheckoutPage() {
   // Shipping cost based on method
   const shippingCost = selectedShippingMethod === "express" ? 25.9 : 15.9
 
-  // Coupon discount
-  const couponDiscount = coupon ? coupon.calculateDiscountAmount(subtotal) : 0
+  const couponDiscount = calculateTotalDiscount(subtotal)
 
   // Total
-  const total = subtotal + shippingCost - couponDiscount
-
-  // Go to next step
-  const goToNextStep = () => {
-    if (currentStep === "shipping") {
-      if (!selectedAddressId) {
-        toast({
-          title: "Endereço necessário",
-          description: "Por favor, selecione um endereço de entrega.",
-        })
-        return
-      }
-      setCurrentStep("payment")
-    } else if (currentStep === "payment") {
-      if (selectedPaymentMethod === PaymentMethod.CREDIT_CARD) {
-        if (useTemporaryCard) {
-          if (!cardForm.number || !cardForm.holderName || !cardForm.expiryDate || !cardForm.cvv) {
-            toast({
-              title: "Dados do cartão necessários",
-              description: "Por favor, preencha todos os dados do cartão.",
-            })
-            return
-          }
-        } else if (!selectedPaymentId) {
-          toast({
-            title: "Forma de pagamento necessária",
-            description: "Por favor, selecione um cartão de crédito.",
-          })
-          return
-        }
-      }
-      setCurrentStep("confirmation")
-    }
-  }
-
-  // Go to previous step
-  const goToPreviousStep = () => {
-    if (currentStep === "payment") setCurrentStep("shipping")
-    else if (currentStep === "confirmation") setCurrentStep("payment")
-  }
+  const total = Math.max(0, subtotal + shippingCost - couponDiscount)
 
   // Get selected address
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId)
@@ -202,6 +176,9 @@ export default function CheckoutPage() {
   // Handle card form change
   const handleCardFormChange = (field: keyof CardFormState, value: string) => {
     setCardForm((prev) => ({ ...prev, [field]: value }))
+    if (useTemporaryCard) {
+      setTempCard((prev) => ({ ...prev!, [field]: value }))
+    }
   }
 
   // Save new address
@@ -276,6 +253,14 @@ export default function CheckoutPage() {
       setSelectedPaymentId(newCard.id || null)
       setIsNewPayment(false)
       setUseTemporaryCard(false)
+      setTempCard(null)
+      setCardForm({
+        number: "",
+        holderName: "",
+        expiryDate: "",
+        brandId: 1,
+        cvv: "",
+      })
 
       toast({
         title: "Cartão adicionado",
@@ -289,10 +274,9 @@ export default function CheckoutPage() {
     }
   }
 
-  // Apply coupon
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
-      setCouponError("Por favor, informe um código de cupom.")
+      setLocalCouponError("Por favor, informe um código de cupom.")
       toast({
         title: "Código vazio",
         description: "Por favor, informe um código de cupom.",
@@ -300,91 +284,149 @@ export default function CheckoutPage() {
       return
     }
 
-    try {
-      setCouponError(null)
-      const validCoupon = await validateCoupon(couponCode)
+    setLocalCouponError(null)
+    const validCoupon = await validateAndAddCoupon(couponCode, subtotal)
 
-      if (validCoupon) {
-        toast({
-          title: "Cupom aplicado",
-          description: `Cupom ${validCoupon.code} aplicado com sucesso!`,
-        })
-        setCouponCode("")
-        setHasCouponApplied(true)
-      }
-    } catch (error) {
-      setCouponError("Código de cupom inválido ou expirado.")
+    if (validCoupon) {
       toast({
-        title: "Cupom inválido",
-        description: "O código de cupom informado não é válido ou está expirado.",
+        title: "Cupom aplicado",
+        description: `Cupom ${validCoupon.code} aplicado com sucesso!`,
+      })
+      setCouponCode("")
+    } else if (couponError) {
+      setLocalCouponError(couponError)
+      toast({
+        title: "Erro ao aplicar cupom",
+        description: couponError,
       })
     }
   }
 
-  // Remove coupon
-  const removeCoupon = () => {
-    clearCoupon()
-    setCouponCode("")
-    setCouponError(null)
-    setHasCouponApplied(false)
+  const handleRemoveCoupon = (code: string) => {
+    removeMultipleCoupon(code)
     toast({
       title: "Cupom removido",
-      description: "O cupom foi removido do pedido.",
+      description: `O cupom ${code} foi removido do pedido.`,
     })
+  }
+
+  const handleClearAllCoupons = () => {
+    clearCoupons()
+    setCouponCode("")
+    setLocalCouponError(null)
+    toast({
+      title: "Cupons removidos",
+      description: "Todos os cupons foram removidos do pedido.",
+    })
+  }
+
+  const validateStep = (step: CheckoutStep): boolean => {
+    if (step === "shipping") {
+      if (!selectedAddressId) {
+        toast({ title: "Endereço necessário", description: "Por favor, selecione um endereço de entrega." })
+        return false
+      }
+    }
+
+    if (step === "payment" && selectedPaymentMethod === PaymentMethod.CREDIT_CARD) {
+      if (useMultipleCards) {
+        const validation = validateMultipleCardPayments(multipleCardPayments, total)
+        if (!validation.isValid) {
+          toast({
+            title: "Erro no pagamento",
+            description: validation.error,
+          })
+          return false
+        }
+      } else if (useTemporaryCard) {
+        if (!tempCard || !tempCard.number || !tempCard.holderName || !tempCard.expiryDate || !tempCard.cvv) {
+          toast({ title: "Dados do cartão necessários", description: "Por favor, preencha todos os dados do cartão." })
+          return false
+        }
+      } else if (!selectedPaymentId) {
+        toast({ title: "Forma de pagamento necessária", description: "Por favor, selecione um cartão de crédito." })
+        return false
+      }
+    }
+
+    return true
+  }
+
+  // Go to next step
+  const goToNextStep = () => {
+    if (!validateStep(currentStep)) return
+
+    if (currentStep === "shipping") setCurrentStep("payment")
+    else if (currentStep === "payment") setCurrentStep("confirmation")
+  }
+
+  // Go to previous step
+  const goToPreviousStep = () => {
+    if (currentStep === "payment") setCurrentStep("shipping")
+    else if (currentStep === "confirmation") setCurrentStep("payment")
+  }
+
+  const buildCardPayments = (): OrderCardPayment[] => {
+    if (useMultipleCards && multipleCardPayments.length > 0) {
+      return multipleCardPayments
+    }
+
+    if (useTemporaryCard && tempCard) {
+      return [
+        {
+          card: {
+            number: tempCard.number.replace(/\s/g, ""),
+            holderName: tempCard.holderName,
+            cvv: tempCard.cvv,
+            expiryDate: tempCard.expiryDate,
+            brandId: tempCard.brandId,
+          },
+          amount: total,
+        },
+      ]
+    }
+
+    if (selectedPaymentId) {
+      return [
+        {
+          cardId: selectedPaymentId,
+          amount: total,
+        },
+      ]
+    }
+
+    return []
   }
 
   // Handle order completion
   const handleCompleteOrder = async () => {
-    if (!selectedAddressId) {
-      toast({
-        title: "Informações incompletas",
-        description: "Por favor, selecione um endereço de entrega.",
-      })
-      return
-    }
-
-    if (selectedPaymentMethod === PaymentMethod.CREDIT_CARD) {
-      if (useTemporaryCard) {
-        if (!cardForm.number || !cardForm.holderName || !cardForm.expiryDate || !cardForm.cvv) {
-          toast({
-            title: "Informações incompletas",
-            description: "Por favor, preencha todos os dados do cartão.",
-          })
-          return
-        }
-      } else if (!selectedPaymentId) {
-        toast({
-          title: "Informações incompletas",
-          description: "Por favor, selecione um cartão de crédito.",
-        })
-        return
-      }
-    }
+    if (!validateStep("shipping") || !validateStep("payment")) return
 
     setIsSubmitting(true)
 
     try {
-      let temporaryCard: OrderCardInput | undefined
+      const cardPayments = buildCardPayments()
 
-      if (useTemporaryCard) {
-        temporaryCard = {
-          number: cardForm.number.replace(/\s/g, ""),
-          holderName: cardForm.holderName,
-          cvv: cardForm.cvv,
-          expiryDate: cardForm.expiryDate,
-          brandId: cardForm.brandId,
-        }
+      if (cardPayments.length === 0) {
+        toast({
+          title: "Pagamento inválido",
+          description: "Por favor, selecione ou adicione um cartão para pagamento.",
+        })
+        setIsSubmitting(false)
+        return
       }
 
-      await createOrder(
-        selectedAddressId,
-        selectedPaymentMethod,
-        useTemporaryCard ? undefined : (selectedPaymentId ?? undefined),
-        coupon?.code,
-        temporaryCard,
-      )
+      const couponCodes = getCouponCodes()
+      const primaryCouponCode = couponCodes.length > 0 ? couponCodes.join(",") : undefined
 
-      // Clear cart after successful order
+      await createOrder(
+        selectedAddressId!,
+        selectedPaymentMethod,
+        undefined,
+        primaryCouponCode,
+        undefined,
+        cardPayments,
+      )
       await refreshCart()
 
       toast({
@@ -392,7 +434,6 @@ export default function CheckoutPage() {
         description: "Seu pedido foi processado e está sendo preparado.",
       })
 
-      // Redirect to order confirmation page
       router.push("/")
     } catch (error) {
       console.error("Error creating order:", error)
@@ -418,7 +459,7 @@ export default function CheckoutPage() {
               <h1 className="text-2xl font-bold mb-4">Seu carrinho está vazio</h1>
               <p className="text-gray-600 mb-6">Adicione produtos ao seu carrinho antes de finalizar a compra.</p>
               <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white">
-                <a href="/">Continuar Comprando</a>
+                <Link href="/">Continuar Comprando</Link>
               </Button>
             </div>
           </main>
@@ -440,10 +481,11 @@ export default function CheckoutPage() {
             <div className="flex justify-between mb-8">
               <div className="flex-1 flex items-center">
                 <div
-                  className={`rounded-full h-8 w-8 flex items-center justify-center ${currentStep === "shipping" || currentStep === "payment" || currentStep === "confirmation"
+                  className={`rounded-full h-8 w-8 flex items-center justify-center ${
+                    currentStep === "shipping" || currentStep === "payment" || currentStep === "confirmation"
                       ? "bg-amber-500 text-white"
                       : "bg-gray-200 text-gray-600"
-                    }`}
+                  }`}
                 >
                   {currentStep === "shipping" ? "1" : <Check className="h-5 w-5" />}
                 </div>
@@ -454,18 +496,20 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex-1 h-1 mx-2 bg-gray-200">
                   <div
-                    className={`h-full ${currentStep === "payment" || currentStep === "confirmation" ? "bg-amber-500" : "bg-gray-200"
-                      }`}
+                    className={`h-full ${
+                      currentStep === "payment" || currentStep === "confirmation" ? "bg-amber-500" : "bg-gray-200"
+                    }`}
                   ></div>
                 </div>
               </div>
 
               <div className="flex-1 flex items-center">
                 <div
-                  className={`rounded-full h-8 w-8 flex items-center justify-center ${currentStep === "payment" || currentStep === "confirmation"
+                  className={`rounded-full h-8 w-8 flex items-center justify-center ${
+                    currentStep === "payment" || currentStep === "confirmation"
                       ? "bg-amber-500 text-white"
                       : "bg-gray-200 text-gray-600"
-                    }`}
+                  }`}
                 >
                   {currentStep === "payment" ? (
                     "2"
@@ -487,8 +531,9 @@ export default function CheckoutPage() {
 
               <div className="flex items-center">
                 <div
-                  className={`rounded-full h-8 w-8 flex items-center justify-center ${currentStep === "confirmation" ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-600"
-                    }`}
+                  className={`rounded-full h-8 w-8 flex items-center justify-center ${
+                    currentStep === "confirmation" ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-600"
+                  }`}
                 >
                   3
                 </div>
@@ -528,8 +573,9 @@ export default function CheckoutPage() {
                               {addresses.map((address) => (
                                 <div
                                   key={address.id}
-                                  className={`border rounded-lg p-4 ${selectedAddressId === address.id ? "border-amber-500 bg-amber-50" : ""
-                                    }`}
+                                  className={`border rounded-lg p-4 ${
+                                    selectedAddressId === address.id ? "border-amber-500 bg-amber-50" : ""
+                                  }`}
                                 >
                                   <div className="flex items-start">
                                     <RadioGroupItem
@@ -543,21 +589,26 @@ export default function CheckoutPage() {
                                         className="font-medium flex items-center"
                                       >
                                         {address.alias}
-                                        {address.type === "BILLING" && (
-                                          <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                        {address.type === AddressType.SHIPPING && (
+                                          <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                                            Entrega
+                                          </span>
+                                        )}
+                                        {address.type === AddressType.BILLING && (
+                                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
                                             Cobrança
                                           </span>
                                         )}
-                                        {address.type === "SHIPPING" && (
-                                          <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
-                                            Entrega
+                                        {address.type === AddressType.BOTH && (
+                                          <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                                            Entrega e Cobrança
                                           </span>
                                         )}
                                       </Label>
                                       <p className="text-gray-600 mt-1">
                                         {address.street}, {address.number}
+                                        {address.complement ? `, ${address.complement}` : ""}
                                       </p>
-                                      {address.complement && <p className="text-gray-600">{address.complement}</p>}
                                       <p className="text-gray-600">
                                         {address.district}, {address.city} - {address.state}
                                       </p>
@@ -568,46 +619,31 @@ export default function CheckoutPage() {
                               ))}
                             </RadioGroup>
                           ) : (
-                            <div className="text-center py-6 border rounded-lg border-dashed">
-                              <p className="text-gray-600 mb-4">Você não possui endereços cadastrados.</p>
-                              <Button onClick={() => setIsNewAddress(true)}>Adicionar Endereço</Button>
+                            <div className="text-center py-8 border rounded-lg">
+                              <p className="text-gray-500 mb-4">Você não possui endereços cadastrados.</p>
                             </div>
                           )}
 
-                          {addresses.length > 0 && (
-                            <Button
-                              variant="outline"
-                              onClick={() => setIsNewAddress(true)}
-                              className="flex items-center"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Adicionar Novo Endereço
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            className="w-full bg-transparent"
+                            onClick={() => setIsNewAddress(true)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Adicionar Novo Endereço
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-4 mb-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="alias">Nome do Endereço</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                              <Label htmlFor="alias">Apelido do Endereço</Label>
                               <Input
                                 id="alias"
                                 placeholder="Ex: Casa, Trabalho"
                                 value={addressForm.alias}
                                 onChange={(e) => handleAddressFormChange("alias", e.target.value)}
                               />
-                            </div>
-                            <div>
-                              <Label htmlFor="type">Tipo de Endereço</Label>
-                              <select
-                                id="type"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={addressForm.type}
-                                onChange={(e) => handleAddressFormChange("type", e.target.value)}
-                              >
-                                <option value={AddressType.SHIPPING}>Entrega</option>
-                                <option value={AddressType.BILLING}>Cobrança</option>
-                              </select>
                             </div>
                             <div>
                               <Label htmlFor="zipCode">CEP</Label>
@@ -619,24 +655,9 @@ export default function CheckoutPage() {
                               />
                             </div>
                             <div>
-                              <Label htmlFor="residenceType">Tipo de Residência</Label>
-                              <select
-                                id="residenceType"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={addressForm.residenceType}
-                                onChange={(e) => handleAddressFormChange("residenceType", e.target.value)}
-                              >
-                                <option value={ResidenceType.HOUSE}>Casa</option>
-                                <option value={ResidenceType.APARTMENT}>Apartamento</option>
-                                <option value={ResidenceType.COMMERCIAL}>Comercial</option>
-                                <option value={ResidenceType.OTHER}>Outro</option>
-                              </select>
-                            </div>
-                            <div className="md:col-span-2">
-                              <Label htmlFor="street">Logradouro</Label>
+                              <Label htmlFor="street">Rua</Label>
                               <Input
                                 id="street"
-                                placeholder="Rua, Avenida, etc."
                                 value={addressForm.street}
                                 onChange={(e) => handleAddressFormChange("street", e.target.value)}
                               />
@@ -645,7 +666,6 @@ export default function CheckoutPage() {
                               <Label htmlFor="number">Número</Label>
                               <Input
                                 id="number"
-                                placeholder="123"
                                 value={addressForm.number}
                                 onChange={(e) => handleAddressFormChange("number", e.target.value)}
                               />
@@ -654,7 +674,6 @@ export default function CheckoutPage() {
                               <Label htmlFor="complement">Complemento</Label>
                               <Input
                                 id="complement"
-                                placeholder="Apto, Bloco, etc."
                                 value={addressForm.complement}
                                 onChange={(e) => handleAddressFormChange("complement", e.target.value)}
                               />
@@ -713,8 +732,9 @@ export default function CheckoutPage() {
                         className="space-y-4 mb-6"
                       >
                         <div
-                          className={`border rounded-lg p-4 ${selectedShippingMethod === "standard" ? "border-amber-500 bg-amber-50" : ""
-                            }`}
+                          className={`border rounded-lg p-4 ${
+                            selectedShippingMethod === "standard" ? "border-amber-500 bg-amber-50" : ""
+                          }`}
                         >
                           <div className="flex items-start">
                             <RadioGroupItem value="standard" id="shipping-standard" className="mt-1" />
@@ -731,8 +751,9 @@ export default function CheckoutPage() {
                         </div>
 
                         <div
-                          className={`border rounded-lg p-4 ${selectedShippingMethod === "express" ? "border-amber-500 bg-amber-50" : ""
-                            }`}
+                          className={`border rounded-lg p-4 ${
+                            selectedShippingMethod === "express" ? "border-amber-500 bg-amber-50" : ""
+                          }`}
                         >
                           <div className="flex items-start">
                             <RadioGroupItem value="express" id="shipping-express" className="mt-1" />
@@ -764,42 +785,71 @@ export default function CheckoutPage() {
 
                   {/* Payment Step */}
                   {currentStep === "payment" && (
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <div className="bg-white rounded-lg p-6 shadow-sm">
+                      <div className="flex items-center mb-6">
                         <CreditCard className="mr-2 h-5 w-5 text-amber-500" />
-                        Forma de Pagamento
-                      </h2>
+                        <h2 className="text-xl font-semibold">Forma de Pagamento</h2>
+                      </div>
 
-                      {/* Cupom de Desconto Section */}
                       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                         <h3 className="font-medium text-gray-800 mb-3 flex items-center">
                           <Tag className="mr-2 h-4 w-4 text-amber-500" />
-                          Cupom de Desconto
+                          Cupons de Desconto
                         </h3>
 
-                        {coupon ? (
-                          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md">
-                            <div className="flex items-center">
-                              <Tag className="h-5 w-5 text-green-600 mr-2" />
-                              <div>
-                                <p className="font-medium text-green-700">{coupon.code}</p>
-                                <p className="text-sm text-green-600">
-                                  {coupon.type === "PERCENTAGE"
-                                    ? `${coupon.discount}% de desconto`
-                                    : `R$${coupon.discount.toFixed(2)} de desconto`}
-                                </p>
+                        {/* Lista de cupons aplicados */}
+                        {coupons.length > 0 && (
+                          <div className="space-y-2 mb-4">
+                            {coupons.map((coupon) => (
+                              <div
+                                key={coupon.code}
+                                className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-md"
+                              >
+                                <div className="flex items-center">
+                                  <Tag className="h-5 w-5 text-green-600 mr-2" />
+                                  <div>
+                                    <p className="font-medium text-green-700">{coupon.code}</p>
+                                    <p className="text-sm text-green-600">
+                                      {coupon.type === "PERCENTAGE"
+                                        ? `${coupon.discount}% de desconto`
+                                        : `R$${coupon.discount.toFixed(2)} de desconto`}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-gray-500 hover:text-red-500"
+                                  onClick={() => handleRemoveCoupon(coupon.code)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
                               </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-500 hover:text-red-500"
-                              onClick={removeCoupon}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            ))}
+
+                            {/* Aviso quando desconto atingiu o limite */}
+                            {!canAddMoreCoupons(subtotal) && (
+                              <p className="text-sm text-amber-600 mt-2">
+                                O desconto máximo foi atingido (igual ao valor dos produtos).
+                              </p>
+                            )}
+
+                            {/* Botão para remover todos os cupons */}
+                            {coupons.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-500 hover:text-red-500 mt-2"
+                                onClick={handleClearAllCoupons}
+                              >
+                                Remover todos os cupons
+                              </Button>
+                            )}
                           </div>
-                        ) : (
+                        )}
+
+                        {/* Campo para adicionar novo cupom */}
+                        {canAddMoreCoupons(subtotal) && (
                           <div className="space-y-4">
                             <div className="flex gap-2">
                               <Input
@@ -812,7 +862,15 @@ export default function CheckoutPage() {
                                 {isCouponLoading ? "Aplicando..." : "Aplicar"}
                               </Button>
                             </div>
-                            {couponError && <p className="text-sm text-red-600">{couponError}</p>}
+                            {(localCouponError || couponError) && (
+                              <p className="text-sm text-red-600">{localCouponError || couponError}</p>
+                            )}
+                            {coupons.length > 0 && (
+                              <p className="text-xs text-gray-500">
+                                Você pode adicionar mais cupons. O desconto total não pode ultrapassar o valor dos
+                                produtos.
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -825,8 +883,9 @@ export default function CheckoutPage() {
                       >
                         {/* Credit Card Option */}
                         <div
-                          className={`border rounded-lg p-4 ${selectedPaymentMethod === PaymentMethod.CREDIT_CARD ? "border-amber-500 bg-amber-50" : ""
-                            }`}
+                          className={`border rounded-lg p-4 ${
+                            selectedPaymentMethod === PaymentMethod.CREDIT_CARD ? "border-amber-500 bg-amber-50" : ""
+                          }`}
                         >
                           <div className="flex items-start">
                             <RadioGroupItem
@@ -840,103 +899,46 @@ export default function CheckoutPage() {
                               </Label>
 
                               {selectedPaymentMethod === PaymentMethod.CREDIT_CARD && (
-                                <div className="mt-4">
-                                  {/* Option to use temporary card */}
-                                  <div className="mb-4">
-                                    <div className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id="use-temporary-card"
-                                        checked={useTemporaryCard}
-                                        onCheckedChange={(checked) => {
-                                          setUseTemporaryCard(checked as boolean)
-                                          if (checked) {
-                                            setSelectedPaymentId(null)
-                                            setIsNewPayment(false)
-                                          }
-                                        }}
-                                      />
-                                      <Label htmlFor="use-temporary-card" className="text-sm">
-                                        Usar cartão sem salvar na conta
-                                      </Label>
-                                    </div>
+                                <div className="mt-4 space-y-4">
+                                  <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <Checkbox
+                                      id="use-multiple-cards"
+                                      checked={useMultipleCards}
+                                      onCheckedChange={(checked) => {
+                                        setUseMultipleCards(checked as boolean)
+                                        if (checked) {
+                                          setUseTemporaryCard(false)
+                                          setSelectedPaymentId(null)
+                                          setIsNewPayment(false)
+                                          setTempCard(null)
+                                        } else {
+                                          setMultipleCardPayments([])
+                                        }
+                                      }}
+                                    />
+                                    <Label htmlFor="use-multiple-cards" className="text-sm cursor-pointer">
+                                      Dividir pagamento entre múltiplos cartões
+                                    </Label>
                                   </div>
 
-                                  {useTemporaryCard ? (
-                                    <div className="space-y-4">
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2">
-                                          <Label htmlFor="tempCardNumber">Número do Cartão</Label>
-                                          <Input
-                                            id="tempCardNumber"
-                                            placeholder="0000 0000 0000 0000"
-                                            value={cardForm.number}
-                                            onChange={(e) =>
-                                              handleCardFormChange("number", formatCardNumber(e.target.value))
-                                            }
-                                            maxLength={19}
-                                          />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                          <Label htmlFor="tempCardName">Nome no Cartão</Label>
-                                          <Input
-                                            id="tempCardName"
-                                            placeholder="Como aparece no cartão"
-                                            value={cardForm.holderName}
-                                            onChange={(e) => handleCardFormChange("holderName", e.target.value)}
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label htmlFor="tempExpiry">Validade</Label>
-                                          <Input
-                                            id="tempExpiry"
-                                            placeholder="MM/AA"
-                                            value={cardForm.expiryDate}
-                                            onChange={(e) =>
-                                              handleCardFormChange("expiryDate", formatExpiryDate(e.target.value))
-                                            }
-                                            maxLength={5}
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label htmlFor="tempCvv">CVV</Label>
-                                          <Input
-                                            id="tempCvv"
-                                            placeholder="123"
-                                            value={cardForm.cvv}
-                                            onChange={(e) =>
-                                              handleCardFormChange("cvv", e.target.value.replace(/\D/g, "").slice(0, 4))
-                                            }
-                                            maxLength={4}
-                                          />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                          <Label htmlFor="tempBrandId">Bandeira</Label>
-                                          <select
-                                            id="tempBrandId"
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            value={cardForm.brandId}
-                                            onChange={(e) => handleCardFormChange("brandId", e.target.value)}
-                                          >
-                                            {brands && brands.map((brand) => {
-                                              return (
-                                                <option key={brand.id + "-tempBrand"} value={brand.id}>{brand.name}</option>
-                                              )
-                                            })}
-                                          </select>
-                                        </div>
-                                      </div>
-                                    </div>
+                                  {useMultipleCards ? (
+                                    <MultiCardPayment
+                                      cards={cards}
+                                      totalAmount={total}
+                                      brands={brands}
+                                      onPaymentsChange={setMultipleCardPayments}
+                                    />
                                   ) : (
                                     <>
                                       {isCardsLoading ? (
-                                        <div className="space-y-4">
+                                        <div className="space-y-3">
                                           {[...Array(2)].map((_, i) => (
-                                            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                                            <Skeleton key={i} className="h-16 w-full rounded-lg" />
                                           ))}
                                         </div>
-                                      ) : !isNewPayment ? (
-                                        <div className="space-y-4">
-                                          {cards.length > 0 ? (
+                                      ) : (
+                                        <>
+                                          {cards.length > 0 && !useTemporaryCard && (
                                             <RadioGroup
                                               value={selectedPaymentId?.toString() || ""}
                                               onValueChange={(value) => setSelectedPaymentId(Number.parseInt(value))}
@@ -944,132 +946,153 @@ export default function CheckoutPage() {
                                               {cards.map((card) => (
                                                 <div
                                                   key={card.id}
-                                                  className={`border rounded-lg p-4 ${selectedPaymentId === card.id ? "border-amber-500 bg-amber-50" : ""
-                                                    }`}
+                                                  className={`border rounded-lg p-3 ${
+                                                    selectedPaymentId === card.id ? "border-amber-500 bg-amber-50" : ""
+                                                  }`}
                                                 >
-                                                  <div className="flex items-start">
+                                                  <div className="flex items-center">
                                                     <RadioGroupItem
                                                       value={card.id?.toString() || ""}
-                                                      id={`payment-${card.id}`}
-                                                      className="mt-1"
+                                                      id={`card-${card.id}`}
                                                     />
-                                                    <div className="ml-3 flex-grow">
-                                                      <div className="flex justify-between">
-                                                        <Label
-                                                          htmlFor={`payment-${card.id}`}
-                                                          className="font-medium flex items-center"
-                                                        >
-                                                          {brands.find((brand) => brand.id == card.brandId)?.name}{" "}
-                                                          terminado em {card.number.slice(-4)}
-                                                        </Label>
-                                                      </div>
-                                                      <p className="text-gray-600 mt-1">{card.holderName}</p>
-                                                      <p className="text-gray-600 text-sm">
-                                                        Validade: {card.expiryDate}
-                                                      </p>
+                                                    <div className="ml-3">
+                                                      <Label htmlFor={`card-${card.id}`} className="font-medium">
+                                                        {brands.find((brand) => brand.id == card.brandId)?.name}{" "}
+                                                        terminado em {card.number.slice(-4)}
+                                                      </Label>
+                                                      <p className="text-sm text-gray-600">{card.holderName}</p>
                                                     </div>
                                                   </div>
                                                 </div>
                                               ))}
                                             </RadioGroup>
-                                          ) : (
-                                            <div className="text-center py-6 border rounded-lg border-dashed">
-                                              <p className="text-gray-600 mb-4">Você não possui cartões cadastrados.</p>
-                                              <Button onClick={() => setIsNewPayment(true)}>Adicionar Cartão</Button>
-                                            </div>
                                           )}
 
-                                          {cards.length > 0 && (
-                                            <Button
-                                              variant="outline"
-                                              onClick={() => setIsNewPayment(true)}
-                                              className="flex items-center"
-                                            >
-                                              <Plus className="h-4 w-4 mr-2" />
-                                              Adicionar Novo Cartão
-                                            </Button>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <div className="space-y-4">
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="md:col-span-2">
-                                              <Label htmlFor="cardNumber">Número do Cartão</Label>
-                                              <Input
-                                                id="cardNumber"
-                                                placeholder="0000 0000 0000 0000"
-                                                value={cardForm.number}
-                                                onChange={(e) =>
-                                                  handleCardFormChange("number", formatCardNumber(e.target.value))
-                                                }
-                                                maxLength={19}
-                                              />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                              <Label htmlFor="cardName">Nome no Cartão</Label>
-                                              <Input
-                                                id="cardName"
-                                                placeholder="Como aparece no cartão"
-                                                value={cardForm.holderName}
-                                                onChange={(e) => handleCardFormChange("holderName", e.target.value)}
-                                              />
-                                            </div>
-                                            <div>
-                                              <Label htmlFor="expiry">Validade</Label>
-                                              <Input
-                                                id="expiry"
-                                                placeholder="MM/AA"
-                                                value={cardForm.expiryDate}
-                                                onChange={(e) =>
-                                                  handleCardFormChange("expiryDate", formatExpiryDate(e.target.value))
-                                                }
-                                                maxLength={5}
-                                              />
-                                            </div>
-                                            <div>
-                                              <Label htmlFor="cvv">CVV</Label>
-                                              <Input
-                                                id="cvv"
-                                                placeholder="123"
-                                                value={cardForm.cvv}
-                                                onChange={(e) =>
-                                                  handleCardFormChange(
-                                                    "cvv",
-                                                    e.target.value.replace(/\D/g, "").slice(0, 4),
-                                                  )
-                                                }
-                                                maxLength={4}
-                                              />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                              <Label htmlFor="brandId">Bandeira</Label>
-                                              <select
-                                                id="brandId"
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                value={cardForm.brandId}
-                                                onChange={(e) => handleCardFormChange("brandId", e.target.value)}
+                                          {!isNewPayment && !useTemporaryCard && (
+                                            <div className="space-y-2 mt-4">
+                                              <Button
+                                                variant="outline"
+                                                className="w-full bg-transparent"
+                                                onClick={() => {
+                                                  setIsNewPayment(true)
+                                                  setSelectedPaymentId(null)
+                                                }}
                                               >
-                                                {brands && brands.map((brand) => {
-                                                  return (
-                                                    <option key={brand.id + "-cardForm"} value={brand.id}>{brand.name}</option>
-                                                  )
-                                                })}
-                                              </select>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Adicionar Novo Cartão (Salvar)
+                                              </Button>
+                                              <Button
+                                                variant="outline"
+                                                className="w-full bg-transparent"
+                                                onClick={() => {
+                                                  setUseTemporaryCard(true)
+                                                  setSelectedPaymentId(null)
+                                                  setTempCard({
+                                                    number: "",
+                                                    holderName: "",
+                                                    expiryDate: "",
+                                                    brandId: 1,
+                                                    cvv: "",
+                                                  })
+                                                }}
+                                              >
+                                                <CreditCard className="mr-2 h-4 w-4" />
+                                                Usar Cartão Temporário (Não Salvar)
+                                              </Button>
                                             </div>
-                                          </div>
+                                          )}
 
-                                          <div className="flex gap-3">
-                                            <Button variant="outline" onClick={() => setIsNewPayment(false)}>
-                                              Cancelar
-                                            </Button>
-                                            <Button
-                                              onClick={handleSaveCard}
-                                              className="bg-amber-500 hover:bg-amber-600 text-white"
-                                            >
-                                              Salvar Cartão
-                                            </Button>
-                                          </div>
-                                        </div>
+                                          {(isNewPayment || useTemporaryCard) && (
+                                            <div className="space-y-4 border rounded-lg p-4">
+                                              <h4 className="font-medium">
+                                                {useTemporaryCard ? "Dados do Cartão (Não será salvo)" : "Novo Cartão"}
+                                              </h4>
+                                              <div className="grid grid-cols-2 gap-4">
+                                                <div className="col-span-2">
+                                                  <Label htmlFor="cardNumber">Número do Cartão</Label>
+                                                  <Input
+                                                    id="cardNumber"
+                                                    placeholder="0000 0000 0000 0000"
+                                                    value={cardForm.number}
+                                                    onChange={(e) =>
+                                                      handleCardFormChange("number", formatCardNumber(e.target.value))
+                                                    }
+                                                    maxLength={19}
+                                                  />
+                                                </div>
+                                                <div className="col-span-2">
+                                                  <Label htmlFor="cardName">Nome no Cartão</Label>
+                                                  <Input
+                                                    id="cardName"
+                                                    placeholder="Nome como está no cartão"
+                                                    value={cardForm.holderName}
+                                                    onChange={(e) => handleCardFormChange("holderName", e.target.value)}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor="cardExpiry">Validade</Label>
+                                                  <Input
+                                                    id="cardExpiry"
+                                                    placeholder="MM/AA"
+                                                    value={cardForm.expiryDate}
+                                                    onChange={(e) =>
+                                                      handleCardFormChange(
+                                                        "expiryDate",
+                                                        formatExpiryDate(e.target.value),
+                                                      )
+                                                    }
+                                                    maxLength={5}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label htmlFor="cardCvv">CVV</Label>
+                                                  <Input
+                                                    id="cardCvv"
+                                                    placeholder="000"
+                                                    value={cardForm.cvv}
+                                                    onChange={(e) =>
+                                                      handleCardFormChange(
+                                                        "cvv",
+                                                        e.target.value.replace(/\D/g, "").slice(0, 4),
+                                                      )
+                                                    }
+                                                    maxLength={4}
+                                                  />
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-3">
+                                                <Button
+                                                  variant="outline"
+                                                  onClick={() => {
+                                                    setIsNewPayment(false)
+                                                    setUseTemporaryCard(false)
+                                                    setTempCard(null)
+                                                    setCardForm({
+                                                      number: "",
+                                                      holderName: "",
+                                                      expiryDate: "",
+                                                      brandId: 1,
+                                                      cvv: "",
+                                                    })
+                                                    if (cards.length > 0) {
+                                                      setSelectedPaymentId(cards[0].id || null)
+                                                    }
+                                                  }}
+                                                >
+                                                  Cancelar
+                                                </Button>
+                                                {!useTemporaryCard && (
+                                                  <Button
+                                                    onClick={handleSaveCard}
+                                                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                                                  >
+                                                    Salvar Cartão
+                                                  </Button>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </>
                                       )}
                                     </>
                                   )}
@@ -1088,9 +1111,14 @@ export default function CheckoutPage() {
                           onClick={goToNextStep}
                           className="bg-amber-500 hover:bg-amber-600 text-white"
                           disabled={
-                            selectedPaymentMethod === PaymentMethod.CREDIT_CARD &&
-                            !useTemporaryCard &&
-                            !selectedPaymentId
+                            (selectedPaymentMethod === PaymentMethod.CREDIT_CARD &&
+                              !useMultipleCards &&
+                              !useTemporaryCard &&
+                              !selectedPaymentId) ||
+                            (selectedPaymentMethod === PaymentMethod.CREDIT_CARD &&
+                              useMultipleCards &&
+                              multipleCardPayments.length === 0) ||
+                            (selectedPaymentMethod === PaymentMethod.CREDIT_CARD && useTemporaryCard && !tempCard)
                           }
                         >
                           Revisar Pedido
@@ -1155,34 +1183,39 @@ export default function CheckoutPage() {
                           <div className="bg-gray-50 p-4 rounded-lg">
                             {selectedPaymentMethod === PaymentMethod.CREDIT_CARD && (
                               <>
-                                {useTemporaryCard ? (
+                                {useMultipleCards ? (
+                                  <p className="font-medium">Pagamento em múltiplos cartões</p>
+                                ) : useTemporaryCard ? (
                                   <p>
-                                    Cartão de Crédito{" "}
-                                    {brands.find((brand) => brand.id == cardForm.brandId)?.name}{" "}
-                                    terminado em {cardForm.number.replace(/\s/g, "").slice(-4)}
+                                    Cartão de Crédito {brands.find((brand) => brand.id == tempCard?.brandId)?.name}{" "}
+                                    terminado em {tempCard?.number.replace(/\s/g, "").slice(-4)}
                                   </p>
                                 ) : (
                                   selectedPaymentCard && (
                                     <p>
                                       Cartão de Crédito{" "}
-                                      {brands.find((brand) => brand.id == selectedPaymentCard.brandId)?.name}{" "}
-                                      terminado em {selectedPaymentCard.number.slice(-4)}
+                                      {brands.find((brand) => brand.id == selectedPaymentCard.brandId)?.name} terminado
+                                      em {selectedPaymentCard.number.slice(-4)}
                                     </p>
                                   )
                                 )}
                               </>
                             )}
 
-                            {coupon && (
-                              <div className="flex items-center mt-2">
-                                <Tag className="h-5 w-5 text-green-600 mr-2" />
-                                <p>
-                                  Cupom de Desconto: <span className="font-medium">{coupon.code}</span> (
-                                  {coupon.type === "PERCENTAGE"
-                                    ? `${coupon.discount}% de desconto`
-                                    : `R$${coupon.discount.toFixed(2)} de desconto`}
-                                  )
-                                </p>
+                            {coupons.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {coupons.map((coupon) => (
+                                  <div key={coupon.code} className="flex items-center">
+                                    <Tag className="h-5 w-5 text-green-600 mr-2" />
+                                    <p>
+                                      Cupom de Desconto: <span className="font-medium">{coupon.code}</span> (
+                                      {coupon.type === "PERCENTAGE"
+                                        ? `${coupon.discount}% de desconto`
+                                        : `R$${coupon.discount.toFixed(2)} de desconto`}
+                                      )
+                                    </p>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -1250,7 +1283,7 @@ export default function CheckoutPage() {
                         <Button
                           onClick={handleCompleteOrder}
                           className="bg-amber-500 hover:bg-amber-600 text-white"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isCartLoading}
                         >
                           {isSubmitting ? "Processando..." : "Concluir Pedido"}
                         </Button>
@@ -1284,15 +1317,32 @@ export default function CheckoutPage() {
                           <span>R${shippingCost.toFixed(2)}</span>
                         </div>
 
-                        {coupon && (
-                          <div className="flex justify-between items-center text-green-600">
-                            <div className="flex items-center">
-                              <span>Cupom: {coupon.code}</span>
-                              <button className="ml-2 text-gray-400 hover:text-red-500" onClick={removeCoupon}>
-                                <X className="h-4 w-4" />
-                              </button>
+                        {coupons.length > 0 && (
+                          <div className="space-y-2">
+                            {coupons.map((coupon) => (
+                              <div key={coupon.code} className="flex justify-between items-center text-green-600">
+                                <div className="flex items-center">
+                                  <span className="text-sm">Cupom: {coupon.code}</span>
+                                  <button
+                                    className="ml-2 text-gray-400 hover:text-red-500"
+                                    onClick={() => handleRemoveCoupon(coupon.code)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                <span className="text-sm">
+                                  -
+                                  {coupon.type === "PERCENTAGE"
+                                    ? `${coupon.discount}%`
+                                    : `R$${coupon.discount.toFixed(2)}`}
+                                </span>
+                              </div>
+                            ))}
+                            {/* Total do desconto */}
+                            <div className="flex justify-between text-green-700 font-medium pt-1 border-t border-green-200">
+                              <span>Desconto total</span>
+                              <span>-R${couponDiscount.toFixed(2)}</span>
                             </div>
-                            <span>-R${couponDiscount.toFixed(2)}</span>
                           </div>
                         )}
                       </div>
@@ -1322,8 +1372,13 @@ export default function CheckoutPage() {
                       className="w-full bg-amber-500 hover:bg-amber-600 text-white"
                       disabled={
                         (selectedPaymentMethod === PaymentMethod.CREDIT_CARD &&
+                          !useMultipleCards &&
                           !useTemporaryCard &&
                           !selectedPaymentId) ||
+                        (selectedPaymentMethod === PaymentMethod.CREDIT_CARD &&
+                          useMultipleCards &&
+                          multipleCardPayments.length === 0) ||
+                        (selectedPaymentMethod === PaymentMethod.CREDIT_CARD && useTemporaryCard && !tempCard) ||
                         isCartLoading
                       }
                     >

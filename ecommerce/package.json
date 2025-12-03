@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "playwright test --headed"
+    "test:e2e": "playwright test --headed --workers=1 --reporter=list"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

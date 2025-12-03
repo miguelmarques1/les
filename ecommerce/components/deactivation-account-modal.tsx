@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { AlertTriangle } from "lucide-react"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
+import { useCustomerProfile } from "@/lib/hooks/use-customer-profile"
 
 interface DeactivateAccountModalProps {
   isOpen: boolean
@@ -18,6 +19,7 @@ export default function DeactivateAccountModal({ isOpen, onClose }: DeactivateAc
   const [confirmationText, setConfirmationText] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const {deleteProfile} = useCustomerProfile()
   const { user, logout } = useAuth()
   const { toast } = useToast()
 
@@ -44,18 +46,8 @@ export default function DeactivateAccountModal({ isOpen, onClose }: DeactivateAc
     setIsLoading(true)
 
     try {
-      // Aqui você faria a chamada à API para desativar a conta
-      // Exemplo:
-      // const response = await fetch('/api/account/deactivate', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ password })
-      // })
-      
-      // if (!response.ok) throw new Error('Erro ao desativar conta')
-
-      // Simulação de delay da API
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // 🔥 Chamada real para desativar conta usando deleteProfile
+      await deleteProfile(password)
 
       toast({
         title: "Conta desativada",
@@ -64,20 +56,24 @@ export default function DeactivateAccountModal({ isOpen, onClose }: DeactivateAc
 
       // Logout do usuário
       logout()
-      
+
       // Redirecionar para página inicial
       window.location.href = "/"
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deactivating account:", error)
+
       toast({
         title: "Erro ao desativar conta",
-        description: "Não foi possível desativar sua conta. Verifique sua senha e tente novamente.",
+        description:
+          error?.message ||
+          "Não foi possível desativar sua conta. Verifique sua senha e tente novamente.",
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
   }
+
 
   const handleClose = () => {
     setConfirmationText("")

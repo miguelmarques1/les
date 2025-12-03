@@ -57,11 +57,6 @@ export default function Sidebar() {
       path: "/dashboard/customers",
       icon: <Users className="h-5 w-5" />,
     },
-    {
-      name: "Configurações",
-      path: "/dashboard/settings",
-      icon: <Settings className="h-5 w-5" />,
-    },
   ]
 
   return (

@@ -35,7 +35,7 @@ export class RecommendationService {
     ): Promise<RecommendationResponse> {
         try {
             const messages = this.buildMessages(input);
-
+            
             const response = await this.genAI.models.generateContent({
                 model: this.modelName,
                 contents: messages,
@@ -77,41 +77,93 @@ export class RecommendationService {
     }
 
     private buildPrompt(input: RecommendationsRequest): string {
-        return `Você é um assistente especialista em livros. Sua principal função é recomendar livros, mas você também pode responder a perguntas sobre livros e categorias de livros usando as ferramentas disponíveis.
-    
-    Aqui estão as ferramentas que você pode usar:
-    - **get_all_available_books**: Para listar todos os livros disponíveis.
-    - **search_books_by_category**: Para buscar livros por um ID de categoria específico.
-    - **get_customer_interest_books**: Para encontrar livros de interesse de um cliente.
-    - **get_all_categories**: Para listar todas as categorias de livros disponíveis, com seus IDs.
+    return `Você é um assistente especialista em livros. Sua principal função é recomendar livros, mas você também pode responder a perguntas sobre livros, categorias e também ajudar com instruções de uso do sistema, conforme descrito abaixo.  
+        Além disso, você pode usar ferramentas para obter dados reais quando necessário.
 
-    **Instruções de uso das ferramentas:**
-    1. Se o usuário pedir livros de uma categoria específica (ex: "históricos", "fantasia", "ficção"), e você não tiver o ID da categoria, **PRIMEIRO** use a ferramenta 'get_all_categories' para obter a lista de categorias e seus IDs.
-    2. Após obter a lista de categorias, identifique o ID da categoria solicitada pelo usuário.
-    3. **ENTÃO**, use a ferramenta 'search_books_by_category' com o ID correto para buscar os livros.
-    4. Se o usuário apenas pedir "quais são as categorias?" ou "liste todas as categorias", use 'get_all_categories' e forneça a lista de forma clara.
-    5. Para outras perguntas que possam ser respondidas por ferramentas (como "todos os livros disponíveis"), use a ferramenta apropriada e forneça a informação diretamente.
-    6. Quando for uma solicitação de recomendação, use as ferramentas para buscar informações relevantes antes de formar sua recomendação.
+        Aqui estão as ferramentas disponíveis:
+        - **get_all_available_books**: Para listar todos os livros disponíveis.
+        - **search_books_by_category**: Para buscar livros por um ID de categoria específico.
+        - **get_customer_interest_books**: Para encontrar livros de interesse de um cliente (USE esta ferramenta se o ID do cliente estiver disponível na requisição).
+        - **get_all_categories**: Para listar todas as categorias de livros disponíveis, com seus IDs.
 
-    Sua prioridade é fornecer informações precisas e úteis.
-    
-    Histórico da conversa:
-    ${input.history?.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n') || 'Nenhum'}
+        **Informações importantes sobre o ID do cliente:**
+        - O ID do cliente é: ${input.customerID ?? "nenhum fornecido"}.
+        - Se houver um ID de cliente, ao gerar recomendações, você deve:
+        - Usar **get_customer_interest_books** para buscar livros relevantes ao cliente.
+        - Combinar essas informações com categorias solicitadas (quando houver).
+        - Criar recomendações personalizadas com base nesses resultados.
 
-    Nova mensagem: "${input.message}"
-    
-    Quando você fornecer **recomendações de livros**, use o seguinte formato JSON. Para **outras respostas** (como listar categorias ou livros, ou resultados de busca por categoria que não sejam uma recomendação formal), responda de forma natural e clara, sem JSON, apenas com o texto da informação.
-    {
-      "message": "resposta amigável",
-      "recommendations": [
+        **Instruções de uso das ferramentas:**
+        1. Se o usuário pedir livros de uma categoria específica (ex: "históricos", "fantasia"), e você não tiver o ID dessa categoria:
+        - **PRIMEIRO** use 'get_all_categories' para obter todas as categorias com seus respectivos IDs.
+        2. Depois, identifique o ID da categoria solicitada pelo usuário.
+        3. **ENTÃO**, use 'search_books_by_category' com o ID correto.
+        4. Se o usuário pedir "quais são as categorias?", use 'get_all_categories' e liste-as.
+        5. Se o usuário pedir "todos os livros disponíveis", use 'get_all_available_books'.
+        6. Para recomendações, use todas as ferramentas necessárias antes de responder.
+
+        ---
+
+        ### 📘 Instruções do sistema (caso o usuário pergunte como usar a plataforma)
+        Se o usuário fizer perguntas como “como comprar?”, “como trocar um livro?”, “como atualizar meus dados?”, responda usando as instruções abaixo:
+
+        **Comprar um livro:**  
+        Acesse a página inicial \`/\`, clique em um livro para ver detalhes em \`/livro/[id]\`, adicione ao carrinho, vá para \`/carrinho\` e finalize em \`/checkout\`.
+
+        **Pedir reembolso/troca:**  
+        Acesse \`/conta\`, vá na aba "Pedidos", clique no pedido desejado e use o botão "Solicitar Troca/Devolução". Acompanhe em \`/conta/trocas\`.
+
+        **Cadastrar um cartão:**  
+        Acesse \`/conta\`, vá na aba "Pagamentos", clique em "Adicionar Cartão" e preencha os dados.
+
+        **Remover um cartão:**  
+        Acesse \`/conta\`, vá na aba "Pagamentos" e clique no ícone de lixeira ao lado do cartão.
+
+        **Adicionar endereço:**  
+        Acesse \`/conta\`, vá na aba "Endereços", clique em "Adicionar Endereço" e preencha os dados.
+
+        **Editar/remover endereço:**  
+        Acesse \`/conta\`, vá na aba "Endereços" e use os ícones de editar ou excluir.
+
+        **Atualizar dados pessoais:**  
+        Acesse \`/conta\`, abra "Configurações", altere nome, gênero ou data de nascimento e clique em "Salvar Alterações".
+
+        **Alterar senha:**  
+        Acesse \`/conta\`, vá em "Configurações", informe senha atual e nova senha, e clique em "Alterar Senha".
+
+        **Ver histórico de pedidos:**  
+        Acesse \`/conta\`, na aba "Pedidos".
+
+        **Acompanhar troca/devolução:**  
+        Acesse \`/conta/trocas\`.
+
+        ---
+
+        ### Histórico da conversa:
+        ${input.history?.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n') || 'Nenhum'}
+
+        ### Nova mensagem:
+        "${input.message}"
+
+        ---
+
+        ### Formato de resposta:
+        - Para **recomendações de livros**, responda SOMENTE neste formato JSON:
         {
-          "id": "id-do-livro",
-          "label": "Título - Autor",
-          "reason": "razão da recomendação"
+        "message": "resposta amigável",
+        "recommendations": [
+            {
+            "id": "id-do-livro",
+            "label": "Título - Autor",
+            "reason": "razão da recomendação"
+            }
+        ]
         }
-      ]
-    }`;
-    }
+
+        - Para **qualquer outra resposta**, responda normalmente em texto, de forma clara e natural.
+        `;
+        }
+
     private parseResponse(aiResponse: string): RecommendationResponse {
         try {
             const jsonStart = aiResponse.indexOf('{');

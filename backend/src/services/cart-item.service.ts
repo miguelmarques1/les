@@ -1,11 +1,10 @@
-import { Repository } from "typeorm"
+import type { Repository } from "typeorm"
 import { CartItem } from "../domain/entity/CartItem"
 import { StockBookStatus } from "../domain/enums/StockBookStatus"
 import type { AddCartItemInputDTO } from "../dto/cart-item.dto"
-import { RepositoryFactory } from "../factories/RepositoryFactory"
-import { StockBook } from "../domain/entity/StockBook"
-import { Cart } from "../domain/entity/Cart"
-import e = require("express")
+import type { RepositoryFactory } from "../factories/RepositoryFactory"
+import type { StockBook } from "../domain/entity/StockBook"
+import type { Cart } from "../domain/entity/Cart"
 
 export interface CartItemServiceInterface {
   store(input: AddCartItemInputDTO): Promise<void>
@@ -41,18 +40,19 @@ export class CartItemService implements CartItemServiceInterface {
       where: {
         book: {
           id: input.book_id,
-        }
+        },
+        status: StockBookStatus.AVAILABLE,
       },
       take: input.quantity,
     })
-    if(stockBooks.length < input.quantity) {
-      throw new Error('Não tem essa quantidade em estoque')
+    if (stockBooks.length < input.quantity) {
+      throw new Error("Não tem essa quantidade em estoque")
     }
 
     const cart = await this.cartRepository.findOne({
       where: {
         id: input.cart_id,
-      }
+      },
     })
 
     for (const stockBook of stockBooks) {

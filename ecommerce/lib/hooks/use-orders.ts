@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { orderService } from "../services"
-import type { OrderModel, OrderCardInput } from "../models/order-model"
+import type { OrderModel, OrderCardInput, OrderCardPayment } from "../models/order-model"
 import type { PaymentMethod } from "../enums/payment-method"
 
 export function useOrders() {
@@ -30,11 +30,19 @@ export function useOrders() {
       cardId?: number,
       couponCode?: string,
       temporaryCard?: OrderCardInput,
+      multipleCards?: OrderCardPayment[],
     ): Promise<OrderModel> => {
       setIsLoading(true)
       setError(null)
       try {
-        const newOrder = await orderService.createOrder(addressId, paymentMethod, cardId, couponCode, temporaryCard)
+        const newOrder = await orderService.createOrder(
+          addressId,
+          paymentMethod,
+          cardId,
+          couponCode,
+          temporaryCard,
+          multipleCards,
+        )
         setOrders((prev) => [newOrder, ...prev])
         return newOrder
       } catch (err) {

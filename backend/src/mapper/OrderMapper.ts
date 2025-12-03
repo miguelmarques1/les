@@ -1,24 +1,20 @@
-import { Order } from "../domain/entity/Order";
-import { OrderAddressOutputDTO, OrderOutputDTO } from "../dto/order.dto";
-import { StockBookMapper } from "./StockBookMapper";
-import { TransactionMapper } from "./TransactionMapper";
+import type { Order } from "../domain/entity/Order"
+import { type OrderAddressOutputDTO, OrderOutputDTO } from "../dto/order.dto"
+import { StockBookMapper } from "./StockBookMapper"
+import { TransactionMapper } from "./TransactionMapper"
 
 export class OrderMapper {
   static entityToOutputDTO(order: Order) {
     const items = order.items.map((item) => {
       const output = StockBookMapper.entityToOutputDTO(item)
-      output.order_item_id = item.id;
-      return output;
-    });
-    const orderAddr = OrderMapper.orderAddressDTO(order);
+      output.order_item_id = item.id
+      return output
+    })
+    const orderAddr = OrderMapper.orderAddressDTO(order)
 
-    return new OrderOutputDTO(
-      order.id,
-      orderAddr,
-      order.status,
-      items,
-      TransactionMapper.entityToOutputDTO(order.transaction),
-    )
+    const transaction = order.transaction ? TransactionMapper.entityToOutputDTO(order.transaction) : null
+
+    return new OrderOutputDTO(order.id, orderAddr, order.status, items, transaction)
   }
 
   private static orderAddressDTO(order: Order): OrderAddressOutputDTO {

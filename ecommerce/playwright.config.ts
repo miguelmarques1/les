@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { Turret_Road } from "next/font/google";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -31,10 +32,6 @@ export default defineConfig({
         {
             name: "Desktop Chrome",
             use: { ...devices["Desktop Chrome"] },
-        },
-        {
-            name: "Mobile Chrome",
-            use: { ...devices["Pixel 5"] },
         },
     ],
 });

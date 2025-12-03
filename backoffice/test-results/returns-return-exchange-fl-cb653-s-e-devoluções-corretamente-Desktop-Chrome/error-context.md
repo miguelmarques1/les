@@ -1,0 +1,227 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: AB
+        - generic [ref=e6]:
+          - heading "Analise" [level=1] [ref=e7]
+          - paragraph [ref=e8]: Bookstore Admin
+      - navigation [ref=e9]:
+        - list [ref=e10]:
+          - listitem [ref=e11]:
+            - link "Painel" [ref=e12] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e13]
+              - generic [ref=e18]: Painel
+          - listitem [ref=e19]:
+            - link "Livros" [ref=e20] [cursor=pointer]:
+              - /url: /dashboard/books
+              - img [ref=e21]
+              - generic [ref=e23]: Livros
+          - listitem [ref=e24]:
+            - link "Pedidos" [ref=e25] [cursor=pointer]:
+              - /url: /dashboard/orders
+              - img [ref=e26]
+              - generic [ref=e30]: Pedidos
+          - listitem [ref=e31]:
+            - link "Trocas & Devoluções" [ref=e32] [cursor=pointer]:
+              - /url: /dashboard/returns
+              - img [ref=e33]
+              - generic [ref=e38]: Trocas & Devoluções
+          - listitem [ref=e39]:
+            - link "Bandeiras de Cartão" [ref=e40] [cursor=pointer]:
+              - /url: /dashboard/card-brands
+              - img [ref=e41]
+              - generic [ref=e43]: Bandeiras de Cartão
+          - listitem [ref=e44]:
+            - link "Cupons" [ref=e45] [cursor=pointer]:
+              - /url: /dashboard/coupons
+              - img [ref=e46]
+              - generic [ref=e48]: Cupons
+          - listitem [ref=e49]:
+            - link "Clientes" [ref=e50] [cursor=pointer]:
+              - /url: /dashboard/customers
+              - img [ref=e51]
+              - generic [ref=e56]: Clientes
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e61]: A
+          - generic [ref=e62]:
+            - paragraph [ref=e63]: Admin User
+            - paragraph [ref=e64]: admin@analise.com
+        - button "Logout" [ref=e65] [cursor=pointer]:
+          - img [ref=e66]
+    - generic [ref=e70]:
+      - heading "Returns & Exchanges" [level=1] [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - img [ref=e75]
+          - textbox "Search by description or ID..." [ref=e78]
+        - combobox [ref=e79] [cursor=pointer]:
+          - generic: All Types
+          - img [ref=e80]
+        - combobox [ref=e82] [cursor=pointer]:
+          - generic: Todos os Status
+          - img [ref=e83]
+      - table [ref=e87]:
+        - rowgroup [ref=e88]:
+          - row "ID Type Customer ID Description Items Date Status Actions" [ref=e89]:
+            - columnheader "ID" [ref=e90]
+            - columnheader "Type" [ref=e91]
+            - columnheader "Customer ID" [ref=e92]
+            - columnheader "Description" [ref=e93]
+            - columnheader "Items" [ref=e94]
+            - columnheader "Date" [ref=e95]
+            - columnheader "Status" [ref=e96]
+            - columnheader "Actions" [ref=e97]
+        - rowgroup [ref=e98]:
+          - row "#6 Exchange 4 Comprei o livro errado 1 items - Exchange Completed" [ref=e99]:
+            - cell "#6" [ref=e100]
+            - cell "Exchange" [ref=e101]
+            - cell "4" [ref=e102]
+            - cell "Comprei o livro errado" [ref=e103]
+            - cell "1 items" [ref=e104]:
+              - generic [ref=e105]: 1 items
+            - cell "-" [ref=e106]
+            - cell "Exchange Completed" [ref=e107]
+            - cell [ref=e108]:
+              - combobox [ref=e109] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e110]
+          - row "#7 Exchange 5 Veio quebrado 1 items - Exchange Completed" [ref=e112]:
+            - cell "#7" [ref=e113]
+            - cell "Exchange" [ref=e114]
+            - cell "5" [ref=e115]
+            - cell "Veio quebrado" [ref=e116]
+            - cell "1 items" [ref=e117]:
+              - generic [ref=e118]: 1 items
+            - cell "-" [ref=e119]
+            - cell "Exchange Completed" [ref=e120]
+            - cell [ref=e121]:
+              - combobox [ref=e122] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e123]
+          - row "#8 Exchange 5 Gostaria de trocar 1 items - Exchange Completed" [ref=e125]:
+            - cell "#8" [ref=e126]
+            - cell "Exchange" [ref=e127]
+            - cell "5" [ref=e128]
+            - cell "Gostaria de trocar" [ref=e129]
+            - cell "1 items" [ref=e130]:
+              - generic [ref=e131]: 1 items
+            - cell "-" [ref=e132]
+            - cell "Exchange Completed" [ref=e133]
+            - cell [ref=e134]:
+              - combobox [ref=e135] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e136]
+          - row "#9 Exchange 5 Gostaria de trocar que veio rasurado 1 items - Exchange Completed" [ref=e138]:
+            - cell "#9" [ref=e139]
+            - cell "Exchange" [ref=e140]
+            - cell "5" [ref=e141]
+            - cell "Gostaria de trocar que veio rasurado" [ref=e142]
+            - cell "1 items" [ref=e143]:
+              - generic [ref=e144]: 1 items
+            - cell "-" [ref=e145]
+            - cell "Exchange Completed" [ref=e146]
+            - cell [ref=e147]:
+              - combobox [ref=e148] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e149]
+          - row "#10 Exchange 5 Veio errado 1 items - Exchange Completed" [ref=e151]:
+            - cell "#10" [ref=e152]
+            - cell "Exchange" [ref=e153]
+            - cell "5" [ref=e154]
+            - cell "Veio errado" [ref=e155]
+            - cell "1 items" [ref=e156]:
+              - generic [ref=e157]: 1 items
+            - cell "-" [ref=e158]
+            - cell "Exchange Completed" [ref=e159]
+            - cell [ref=e160]:
+              - combobox [ref=e161] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e162]
+          - row "#11 Exchange 5 Quero trocar 1 items - Exchange Completed" [ref=e164]:
+            - cell "#11" [ref=e165]
+            - cell "Exchange" [ref=e166]
+            - cell "5" [ref=e167]
+            - cell "Quero trocar" [ref=e168]
+            - cell "1 items" [ref=e169]:
+              - generic [ref=e170]: 1 items
+            - cell "-" [ref=e171]
+            - cell "Exchange Completed" [ref=e172]
+            - cell [ref=e173]:
+              - combobox [ref=e174] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e175]
+          - row "#12 Exchange 1 Gostaria de trocá-lo, veio com a capa rasurada 1 items - Exchange Completed" [ref=e177]:
+            - cell "#12" [ref=e178]
+            - cell "Exchange" [ref=e179]
+            - cell "1" [ref=e180]
+            - cell "Gostaria de trocá-lo, veio com a capa rasurada" [ref=e181]
+            - cell "1 items" [ref=e182]:
+              - generic [ref=e183]: 1 items
+            - cell "-" [ref=e184]
+            - cell "Exchange Completed" [ref=e185]
+            - cell [ref=e186]:
+              - combobox [ref=e187] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e188]
+          - row "#13 Exchange 1 Chegou rasurado 1 items - Exchange Completed" [ref=e190]:
+            - cell "#13" [ref=e191]
+            - cell "Exchange" [ref=e192]
+            - cell "1" [ref=e193]
+            - cell "Chegou rasurado" [ref=e194]
+            - cell "1 items" [ref=e195]:
+              - generic [ref=e196]: 1 items
+            - cell "-" [ref=e197]
+            - cell "Exchange Completed" [ref=e198]
+            - cell [ref=e199]:
+              - combobox [ref=e200] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e201]
+          - row "#14 Exchange 5 Livro veio com páginas danificadas. 1 items - Exchange Requested" [ref=e203]:
+            - cell "#14" [ref=e204]
+            - cell "Exchange" [ref=e205]
+            - cell "5" [ref=e206]
+            - cell "Livro veio com páginas danificadas." [ref=e207]
+            - cell "1 items" [ref=e208]:
+              - generic [ref=e209]: 1 items
+            - cell "-" [ref=e210]
+            - cell "Exchange Requested" [ref=e211]
+            - cell [ref=e212]:
+              - combobox [ref=e213] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e214]
+          - row "#15 Exchange 5 Ambos os livros vieram com defeito de impressão. 1 items - Exchange Requested" [ref=e216]:
+            - cell "#15" [ref=e217]
+            - cell "Exchange" [ref=e218]
+            - cell "5" [ref=e219]
+            - cell "Ambos os livros vieram com defeito de impressão." [ref=e220]
+            - cell "1 items" [ref=e221]:
+              - generic [ref=e222]: 1 items
+            - cell "-" [ref=e223]
+            - cell "Exchange Requested" [ref=e224]
+            - cell [ref=e225]:
+              - combobox [ref=e226] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e227]
+          - row "#16 Return 5 Comprei por engano, gostaria de devolver. 1 items - Return Requested" [ref=e229]:
+            - cell "#16" [ref=e230]
+            - cell "Return" [ref=e231]
+            - cell "5" [ref=e232]
+            - cell "Comprei por engano, gostaria de devolver." [ref=e233]
+            - cell "1 items" [ref=e234]:
+              - generic [ref=e235]: 1 items
+            - cell "-" [ref=e236]
+            - cell "Return Requested" [ref=e237]
+            - cell [ref=e238]:
+              - combobox [ref=e239] [cursor=pointer]:
+                - generic: Atualizar Status
+                - img [ref=e240]
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=e242]
+```

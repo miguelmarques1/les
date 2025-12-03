@@ -1,7 +1,11 @@
 import { BookModel } from "./book-model"
 
+export type OrderItemStatus = "SOLD" | "RESERVED" | "AVAILABLE" | "RETURNED"
+
 export class StockBookModel {
   id?: number
+  code?: string
+  status?: OrderItemStatus
   bookDetails: BookModel
   entryDate: Date
   saleDate?: Date
@@ -21,8 +25,12 @@ export class StockBookModel {
     saleDate?: Date,
     cartItemId?: number,
     orderItemId?: number,
+    code?: string,
+    status?: OrderItemStatus,
   ) {
     this.id = id
+    this.code = code
+    this.status = status
     this.bookDetails = bookDetails
     this.entryDate = entryDate
     this.saleDate = saleDate
@@ -38,18 +46,22 @@ export class StockBookModel {
       BookModel.fromMap(map.book_details),
       new Date(map.entry_date),
       map.supplier,
-      map.costs_value,
-      map.unit_price,
+      Number(map.costs_value),
+      Number(map.unit_price),
       map.id,
       map.sale_date ? new Date(map.sale_date) : undefined,
       map.cart_item_id,
       map.order_item_id,
+      map.code,
+      map.status,
     )
   }
 
   toMap(): Record<string, any> {
     return {
       id: this.id,
+      code: this.code,
+      status: this.status,
       book_details: this.bookDetails.toMap(),
       entry_date: this.entryDate.toISOString(),
       sale_date: this.saleDate?.toISOString(),

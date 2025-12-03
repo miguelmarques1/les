@@ -16,7 +16,9 @@ export class RecommendationController extends BaseController {
       const customerID = parseInt(req['cus_id']);
       const input = req.body as RecommendationsRequest;
       input.customerID = customerID;
-
+      
+      console.log('look at the input sended to recommendation ms');
+      console.log(input);
       const output = await this.recommendationService.handle(input);
 
       return super.success(res, output);

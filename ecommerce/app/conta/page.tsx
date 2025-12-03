@@ -185,7 +185,7 @@ export default function CustomerAccountPage() {
       APPROVED: "APROVADO",
       SHIPPING: "EM TRANSPORTE",
       DELIVERED: "ENTREGUE",
-      REJECTED: "PAGAMENTO RECUSADO"
+      REJECTED: "PAGAMENTO RECUSADO",
     }
     return statusMap[status] || status
   }
@@ -390,17 +390,8 @@ export default function CustomerAccountPage() {
                                     </span>
                                   </div>
                                   <p className="text-sm text-gray-600">
-                                    Data: {formatDate(order.transaction.createdAt)} | Total: R$
-                                    {order.transaction.amount.toFixed(2)}
-                                    {order.transaction.coupon && (
-                                      <span className="ml-2 text-green-600">
-                                        (Cupom {order.transaction.coupon.code}:{" "}
-                                        {order.transaction.coupon.type === "PERCENTAGE"
-                                          ? `${order.transaction.coupon.discount}% off`
-                                          : `R$${order.transaction.coupon.discount.toFixed(2)} off`}
-                                        )
-                                      </span>
-                                    )}
+                                    Data: {formatDate(order.transaction.date)} | Total: R$
+                                    {order.getTotalAmount().toFixed(2)}
                                   </p>
                                 </div>
                                 <div className="flex gap-2">
@@ -420,7 +411,7 @@ export default function CustomerAccountPage() {
                                     <div key={item.id} className="flex flex-col items-center">
                                       <div className="relative h-32 w-24 bg-gray-100 rounded-md overflow-hidden mb-2">
                                         <Image
-                                          src={`/placeholder.svg?height=300&width=200&text=${encodeURIComponent(item.bookDetails.title)}`}
+                                          src={`/placeholder.jpg?key=9pzwo&height=300&width=200&text=${encodeURIComponent(item.bookDetails.title)}`}
                                           alt={item.bookDetails.title}
                                           fill
                                           className="object-cover"
@@ -810,21 +801,17 @@ export default function CustomerAccountPage() {
                         </div>
 
                         <Separator />
-      
+
                         <div>
                           <h3 className="font-medium text-gray-800 mb-2 text-red-600">Zona de Perigo</h3>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Ações irreversíveis relacionadas à sua conta
-                          </p>
+                          <p className="text-sm text-gray-600 mb-4">Ações irreversíveis relacionadas à sua conta</p>
                           <div className="border border-red-200 rounded-lg p-4 bg-red-50">
                             <h4 className="font-medium text-gray-800 mb-2">Desativar Conta</h4>
                             <p className="text-sm text-gray-600 mb-4">
-                              Ao desativar sua conta, você não poderá mais acessá-la e seus dados serão mantidos por um período de recuperação.
+                              Ao desativar sua conta, você não poderá mais acessá-la e seus dados serão mantidos por um
+                              período de recuperação.
                             </p>
-                            <Button 
-                              variant="destructive" 
-                              onClick={() => setIsDeactivateModalOpen(true)}
-                            >
+                            <Button variant="destructive" onClick={() => setIsDeactivateModalOpen(true)}>
                               Desativar Minha Conta
                             </Button>
                           </div>
@@ -884,10 +871,7 @@ export default function CustomerAccountPage() {
         />
       )}
 
-      <DeactivateAccountModal
-        isOpen={isDeactivateModalOpen}
-        onClose={() => setIsDeactivateModalOpen(false)}
-      />
+      <DeactivateAccountModal isOpen={isDeactivateModalOpen} onClose={() => setIsDeactivateModalOpen(false)} />
     </AuthGuard>
   )
 }

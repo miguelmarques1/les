@@ -2,11 +2,13 @@
   "name": "backoffice",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:e2e": "playwright test --headed --workers=1 --reporter=list"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -57,9 +59,13 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "path": "0.12.7",
+    "url": "0.11.4"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "@playwright/test": "^1.53.2",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

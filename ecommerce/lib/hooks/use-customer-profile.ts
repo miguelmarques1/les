@@ -85,5 +85,5 @@ export function useCustomerProfile() {
     }
   }
 
-  return { profile, isLoading, error, updateProfile, refreshProfile: fetchProfile }
+  return { profile, isLoading, error, updateProfile, deleteProfile, refreshProfile: fetchProfile }
 }

@@ -8,5 +8,6 @@ const customerController = new CustomerController();
 Router.post("/", customerController.store.bind(customerController));
 Router.get("/", authentification, customerController.index.bind(customerController));
 Router.put("/", authentification, customerController.update.bind(customerController));
+Router.delete("/", authentification, customerController.delete.bind(customerController));
 
 export { Router as customerRouter };
