@@ -1,44 +1,6 @@
 version: '3.9'
 
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: linkm
-      RABBITMQ_DEFAULT_PASS: linkm
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "status" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
-  backend-db:
-    image: postgres:16
-    container_name: backend-db
-    restart: always
-    environment:
-      POSTGRES_DB: les
-      POSTGRES_USER: backend
-      POSTGRES_PASSWORD: 5cZ7SJq2e88y
-    ports:
-      - "5433:5432"
-    volumes:
-      - backend-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U backend -d les" ]
-      interval: 10s
-      timeout: 10s
-      retries: 15
-      start_period: 30s
-    networks:
-      - app-network
-
   backend:
     build:
       context: ./backend
@@ -82,20 +44,20 @@ services:
       retries: 5
       start_period: 30s
 
-  payment-db:
+  backend-db:
     image: postgres:16
-    container_name: payment-db
+    container_name: backend-db
     restart: always
     environment:
-      POSTGRES_DB: paymentlogs
-      POSTGRES_USER: payment
-      POSTGRES_PASSWORD: hmH7b6RFO77Y
+      POSTGRES_DB: les
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: 5cZ7SJq2e88y
     ports:
-      - "5544:5432"
+      - "5433:5432"
     volumes:
-      - payment-db-data:/var/lib/postgresql/data
+      - backend-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U payment -d paymentlogs" ]
+      test: [ "CMD-SHELL", "pg_isready -U backend -d les" ]
       interval: 10s
       timeout: 10s
       retries: 15
@@ -126,6 +88,44 @@ services:
       - DB_PASSWORD=hmH7b6RFO77Y
       - DB_NAME=paymentlogs
       - MIGRATE_PATH=./migration
+    networks:
+      - app-network
+
+  payment-db:
+    image: postgres:16
+    container_name: payment-db
+    restart: always
+    environment:
+      POSTGRES_DB: paymentlogs
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: hmH7b6RFO77Y
+    ports:
+      - "5544:5432"
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U payment -d paymentlogs" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: linkm
+      RABBITMQ_DEFAULT_PASS: linkm
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - app-network
 
