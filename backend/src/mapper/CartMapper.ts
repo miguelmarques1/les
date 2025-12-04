@@ -1,7 +1,6 @@
 import { Cart } from "../domain/entity/Cart";
 import { CartOutputDTO } from "../dto/cart.dto";
 import { CartItemMapper } from "./CartItemMapper";
-import { StockBookMapper } from "./StockBookMapper";
 
 export class CartMapper {
   static entityToOutputDTO(cart: Cart) {

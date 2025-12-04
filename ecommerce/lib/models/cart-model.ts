@@ -36,3 +36,14 @@ export interface CartAddRequest {
   book_id: number
   quantity: number
 }
+
+
+export interface GroupedCartItem {
+  bookId: number
+  title: string
+  author: string
+  coverImage?: string
+  unitPrice: number
+  quantity: number
+  stockItems: StockBookModel[]
+}

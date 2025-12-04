@@ -1,21 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { CartModel } from "../models/cart-model"
+import type { CartModel, GroupedCartItem } from "../models/cart-model"
 import type { StockBookModel } from "../models/stock-book-model"
 import { cartService } from "../services"
 import { useAuth } from "../contexts/auth-context"
-
-// Interface para representar itens agrupados no carrinho
-interface GroupedCartItem {
-  bookId: number
-  title: string
-  author: string
-  coverImage?: string
-  unitPrice: number
-  quantity: number
-  stockItems: StockBookModel[]
-}
 
 export function useCart() {
   const { isAuthenticated } = useAuth()

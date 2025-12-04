@@ -32,7 +32,7 @@ export class Book {
     @Column()
     publisher: string;
 
-    @ManyToOne(() => PrecificationGroup, { eager: true }) // Carrega automaticamente
+    @ManyToOne(() => PrecificationGroup, { eager: true })
     precificationGroup: PrecificationGroup;
 
     @Column()
