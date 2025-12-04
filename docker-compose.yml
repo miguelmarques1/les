@@ -61,6 +61,7 @@ services:
       - PORT=3000
       - SENDGRID_SENDER_EMAIL=extevao09@gmail.com
       - SENDGRID_SENDER_NAME=Livraria XYZ Support
+      - CRON_ENABLED=false
     secrets:
       - gemini_api_key
       - jwt_secret
