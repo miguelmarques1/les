@@ -13,11 +13,17 @@ export function startBookVerification() {
 
   cron.schedule("0 * * * *", async () => {
     const repo = AppDataSource.getRepository(Book);
-    const books = await repo.find();
+    const books = await repo
+        .createQueryBuilder("book")
+        .leftJoin("book.stockBooks", "stock")
+        .where("book.status = :status", { status: BookState.ACTIVE })
+        .groupBy("book.id")
+        .having("COUNT(stock.id) = 0")
+        .getMany();
 
 
     for(let book of books) {
-        book.status =  book.stockBooks.length > 0 ? BookState.ACTIVE : BookState.INACTIVE;
+        book.status = BookState.INACTIVE;
         await repo.save(book);
     }
   });
