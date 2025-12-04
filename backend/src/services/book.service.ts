@@ -1,4 +1,4 @@
-import { BookOutputDTO } from "../dto/book.dto";
+import { BookInputDTO, BookOutputDTO } from "../dto/book.dto";
 import { BookState } from "../domain/enums/BookState";
 import { BookMapper } from "../mapper/BookMapper";
 import { In, Repository } from "typeorm";
@@ -6,8 +6,12 @@ import { Book } from "../domain/entity/Book";
 import { RepositoryFactory } from "../factories/RepositoryFactory";
 import { StockBook } from "../domain/entity/StockBook";
 import { BookRepository } from "../repositories/BookRepository";
+import { NotFoundException } from "../exceptions/NotFoundException";
+import { PrecificationGroup } from "../domain/entity/PrecificationGroup";
+import { Category } from "../domain/entity/Category";
 
 export interface BookServiceInterface {
+  store(input: BookInputDTO): Promise<BookOutputDTO>;
   index(query?: string, status?: BookState): Promise<BookOutputDTO[]>;
   show(bookId: number): Promise<BookOutputDTO>;
   lowStockCount(): Promise<number>;
@@ -19,9 +23,48 @@ export interface BookServiceInterface {
 
 export class BookService implements BookServiceInterface {
   private bookRepository: Repository<Book> & typeof BookRepository;
+  private precificationGroupRepository: Repository<PrecificationGroup>;
+  private categoryRepository: Repository<Category>;
 
   constructor(repositoryFactory: RepositoryFactory) {
     this.bookRepository = repositoryFactory.getBookRepository();
+    this.precificationGroupRepository = repositoryFactory.getPrecificationGroupRepository();
+    this.categoryRepository = repositoryFactory.getCategoryRepository();
+  }
+
+  public async store(input: BookInputDTO): Promise<BookOutputDTO> {
+    const categories = await this.categoryRepository.find({
+      where: {
+        id: In(input.category_ids),
+      },
+    })
+
+    if (categories.length !== input.category_ids.length) {
+      throw new NotFoundException("Uma ou mais categorias não foram encontradas")
+    }
+
+    const precificationGroup = await this.precificationGroupRepository.findOne({
+      where: {
+        id: input.precification_group_id,
+      },
+    })
+
+    if (!precificationGroup) {
+      throw new NotFoundException("Grupo de precificação não encontrado")
+    }
+
+    const book = BookMapper.inputDTOToEntity(input, categories, precificationGroup)
+    const savedBook = await this.bookRepository.save(book)
+
+    const bookWithRelations = await this.bookRepository.findOne({
+      where: { id: savedBook.id },
+      relations: {
+        precificationGroup: true,
+        categories: true,
+      },
+    })
+
+    return BookMapper.entityToOutputDTO(bookWithRelations)
   }
 
   public async getByIds(ids: number[]): Promise<BookOutputDTO[]> {
@@ -73,7 +116,6 @@ export class BookService implements BookServiceInterface {
   }
 
   public async show(bookId: number): Promise<BookOutputDTO> {
-    console.log(bookId);
     const book = await this.bookRepository.findOne({
       where: {
         id: bookId,
@@ -84,7 +126,6 @@ export class BookService implements BookServiceInterface {
       }
     });
 
-    console.log(book);
     return BookMapper.entityToOutputDTO(book);
   }
 

@@ -47,15 +47,7 @@ export class AdminController extends BaseController {
         }
       }
 
-      console.log("[v0] Dashboard request - startDate param:", startDate)
-      console.log("[v0] Dashboard request - endDate param:", endDate)
-      console.log("[v0] Dashboard request - parsed start:", start?.toISOString())
-      console.log("[v0] Dashboard request - parsed end:", end?.toISOString())
-
       const output = await this.adminService.dashboard(start, end)
-
-      console.log("[v0] Dashboard response - totalSales:", output.summary.totalSales)
-      console.log("[v0] Dashboard response - totalOrders:", output.summary.totalOrders)
 
       super.success(res, output)
     } catch (error) {

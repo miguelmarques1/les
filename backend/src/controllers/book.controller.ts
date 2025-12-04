@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { BaseController } from "./base.controller";
 import { RepositoryFactory } from "../factories/RepositoryFactory";
 import { BookService, BookServiceInterface } from "../services/book.service";
+import { BookInputDTO } from "../dto/book.dto";
 
 export class BookController extends BaseController {
     private bookService: BookServiceInterface;
@@ -10,6 +11,16 @@ export class BookController extends BaseController {
         super();
         const repositoryFactory = new RepositoryFactory();
         this.bookService = new BookService(repositoryFactory);
+    }
+
+    async store(req: Request, res: Response) {
+        try {
+            const input = req.body as BookInputDTO;
+            const output = await this.bookService.store(input)
+            return super.success(res, output, 201)
+        } catch (e: any) {
+            return super.error(res, e)
+        }
     }
 
     async index(req: Request, res: Response) {

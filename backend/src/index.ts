@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 import * as cors from "cors";
 import "reflect-metadata";
 import { router } from "./routes/router";
+import { startBookVerification } from "./jobs/book-verification";
 dotenv.config();
 
 const app = express();
@@ -23,5 +24,6 @@ AppDataSource.initialize()
       console.log("Server is running on http://localhost:" + PORT);
     });
     console.log("Data Source has been initialized!");
+    startBookVerification();
   })
   .catch((error) => console.log(error));

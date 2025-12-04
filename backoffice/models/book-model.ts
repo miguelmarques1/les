@@ -92,3 +92,21 @@ export class BookModel {
     return this.price
   }
 }
+
+
+export interface BookCreateRequest {
+  title: string
+  author: string
+  year: string
+  publisher: string
+  edition: string
+  isbn: string
+  pages: number
+  synopsis: string
+  height: number
+  width: number
+  weight: number
+  depth: number
+  category_ids: number[]
+  precification_group_id: number
+}

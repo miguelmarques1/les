@@ -6,6 +6,7 @@ import { RepositoryFactory } from "../factories/RepositoryFactory";
 
 export interface PrecificationGroupServiceInterface {
   index(pgpId: number): Promise<PrecificationGroupOutputDTO>;
+  getAll(): Promise<PrecificationGroupOutputDTO[]>;
 }
 
 export class PrecificationGroupService implements PrecificationGroupServiceInterface {
@@ -24,5 +25,11 @@ export class PrecificationGroupService implements PrecificationGroupServiceInter
     });
 
     return PrecificationGroupMapper.entityToOutputDTO(precificationGroup);
+  }
+
+  public async getAll(): Promise<PrecificationGroupOutputDTO[]> {
+    const precificationGroups = await this.precificationGroupRepository.find()
+
+    return precificationGroups.map((pg) => PrecificationGroupMapper.entityToOutputDTO(pg))
   }
 }

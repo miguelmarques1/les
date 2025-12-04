@@ -11,6 +11,8 @@ import { ReturnExchangeService } from "./return-exchange-service"
 import { OrderService } from "./order-service"
 import { DashboardService } from "./dashboard-service"
 import { StockService } from "./stock-service"
+import { CategoryService } from "./category-service"
+import { PrecificationGroupService } from "./precification-group-service"
 
 // Create single instances to be shared across the app
 export const apiService = new ApiService(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api")
@@ -27,6 +29,8 @@ export const returnExchangeService = new ReturnExchangeService(apiService)
 export const orderService = new OrderService(apiService)
 export const dashboardService = new DashboardService(apiService)
 export const stockService = new StockService(apiService)
+export const categoryService = new CategoryService(apiService)
+export const precificationGroupService = new PrecificationGroupService(apiService)
 
 // Export services object for easier imports
 export const services = {
@@ -43,6 +47,8 @@ export const services = {
   orderService,
   dashboardService,
   stockService,
+  categoryService,
+  precificationGroupService,
 }
 
 // Export types

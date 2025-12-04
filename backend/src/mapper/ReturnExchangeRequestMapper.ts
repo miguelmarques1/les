@@ -7,7 +7,6 @@ export class ReturnExchangeRequestMapper {
   static entityToOutputDTO(
     entity: ReturnExchangeRequest
   ): ReturnExchangeRequestOutputDTO {
-    console.log(entity.items);
     const items = entity.items.map(StockBookMapper.entityToOutputDTO);
     return new ReturnExchangeRequestOutputDTO(
       entity.id,

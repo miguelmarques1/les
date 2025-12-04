@@ -1,3 +1,25 @@
+### CREATE BOOK
+POST http://localhost:3006/api/book
+Content-Type: application/json
+Accept: application/json
+
+{
+    "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+    "author": "Robert C. Martin",
+    "year": "2008",
+    "publisher": "Prentice Hall",
+    "edition": "1",
+    "isbn": "ISBN 978-0132350884",
+    "pages": 464,
+    "synopsis": "Even bad code can function. But if code isn't clean, it can bring a development organization to its knees.",
+    "height": 23.5,
+    "width": 18.0,
+    "weight": 0.68,
+    "depth": 2.5,
+    "category_ids": [1],
+    "precification_group_id": 1
+}
+
 ### GET ALL BOOKS (with optional query)
 GET http://localhost:3000/api/book?query=
 Accept: application/json

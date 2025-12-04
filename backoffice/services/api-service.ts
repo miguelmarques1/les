@@ -1,6 +1,6 @@
 import { AddressModel, type AddressRequest } from "../models/address-model"
 import { AuthModel, type LoginRequest } from "../models/auth-model"
-import { BookModel } from "../models/book-model"
+import { BookCreateRequest, BookModel } from "../models/book-model"
 import { BrandModel } from "../models/brand-model"
 import { CardModel, type CardRequest } from "../models/card-model"
 import { type CartAddRequest, CartModel } from "../models/cart-model"
@@ -10,6 +10,8 @@ import { OrderModel, type OrderRequest } from "../models/order-model"
 import type { ReturnExchangeModel } from "../models/return-exchange-model"
 import type { DashboardData } from "../models/dashboard-model"
 import type { StockAddRequest, StockResponse, StockItem } from "../models/stock-request"
+import { CategoryModel } from "../models/category-model"
+import { PrecificationGroup } from "../models/precification-group"
 
 // Admin-specific interfaces
 export interface AdminAuthRequest {
@@ -140,6 +142,11 @@ export class ApiService {
   async getAllBooks(): Promise<BookModel[]> {
     const data = await this.request<any[]>("/book", "GET")
     return data.map((item) => BookModel.fromMap(item))
+  }
+
+  async createBook(bookData: BookCreateRequest): Promise<BookModel> {
+    const data = await this.request<any>("/book", "POST", bookData)
+    return BookModel.fromMap(data)
   }
 
   async getBookById(id: number): Promise<BookModel> {
@@ -307,5 +314,15 @@ export class ApiService {
   async getAllUsers(): Promise<any[]> {
     const data = await this.request<any[]>("/admin/users")
     return data
+  }
+
+  async getCategories(): Promise<CategoryModel[]> {
+    const data = await this.request<any[]>("/category")
+    return data.map((item) => CategoryModel.fromMap(item))
+  }
+
+  async getPrecificationGroups(): Promise<PrecificationGroup[]> {
+    const data = await this.request<any[]>("/precification-group")
+    return data.map((item) => PrecificationGroup.fromMap(item))
   }
 }
